@@ -1,0 +1,8 @@
+version: "3.9"
+
+services:
+  # Banco nao e necessario para testes locais porque o backend usa H2.
+  # Este arquivo pode ser reutilizado depois se voce quiser adicionar
+  # outros servicos de apoio ao projeto.
+  placeholder:
+    image: hello-world
