@@ -202,28 +202,6 @@ http://localhost:5173
 - `client`: integracoes externas com PubMed e Ollama
 - `exception`: tratamento global de erros
 
-## Exemplos HTTP
-
-Voce pode usar o arquivo [requests.http](requests.http) em clientes compativeis com `.http`, ou testar com `curl`.
-
-### curl
-
-```bash
-curl -X POST http://localhost:8080/api/search \
-  -H "Content-Type: application/json" \
-  -d "{\"cid\":\"F41.1\",\"context\":\"resistant adults psychotherapy\"}"
-```
-
-### PowerShell
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:8080/api/search" `
-  -ContentType "application/json" `
-  -Body '{"cid":"F41.1","context":"resistant adults psychotherapy"}'
-```
-
 ## Pontos de atencao
 
 - O PubMed pode retornar artigos sem abstract; nesses casos o backend informa a limitacao explicitamente
