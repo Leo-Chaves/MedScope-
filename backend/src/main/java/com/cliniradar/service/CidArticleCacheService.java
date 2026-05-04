@@ -162,7 +162,6 @@ public class CidArticleCacheService {
         List<ArticleResponseDto> articles = entries.stream()
                 .map(cache -> articleSummaryRepository.findByArticle(cache.getArticle()))
                 .flatMap(Optional::stream)
-                .filter(summary -> !isFallbackSummary(summary))
                 .map(articleProcessingService::toResponse)
                 .toList();
 

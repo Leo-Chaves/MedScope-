@@ -51,7 +51,6 @@ public class SearchService {
         List<ArticleResponseDto> articles = pubMedClient.searchArticles(queryUsed).stream()
                 .map(articleProcessingService::saveAndAnalyzeArticle)
                 .map(articleProcessingService::toResponse)
-                .filter(this::isDisplayableArticle)
                 .toList();
 
         return new SearchResponseDto(
@@ -71,8 +70,4 @@ public class SearchService {
         return (base + " " + context.trim()).trim().replaceAll("\\s+", " ");
     }
 
-    private boolean isDisplayableArticle(ArticleResponseDto article) {
-        String warningNote = article.warningNote();
-        return warningNote == null || !warningNote.toLowerCase().contains("fallback informacional");
-    }
 }

@@ -5,6 +5,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
@@ -15,7 +16,9 @@ public class HttpClientConfig {
     @Bean
     @Primary
     public RestClient restClient(RestClient.Builder builder) {
-        return builder.build();
+        return builder
+                .defaultHeader(HttpHeaders.USER_AGENT, "cliniradar/0.1")
+                .build();
     }
 
     @Bean("ollamaRestClient")

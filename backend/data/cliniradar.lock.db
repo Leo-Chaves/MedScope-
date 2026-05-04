@@ -1,0 +1,6 @@
+#FileLock
+#Mon May 04 15:38:52 GMT-03:00 2026
+hostName=172.17.36.88
+id=19df449360a138576d77f4fd9842a1e44e45dcea05b
+method=file
+server=172.17.36.88\:60895

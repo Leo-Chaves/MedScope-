@@ -4,11 +4,12 @@ import com.cliniradar.config.PubMedProperties;
 import com.cliniradar.dto.PubMedArticleDto;
 import com.cliniradar.exception.ExternalServiceException;
 import java.io.StringReader;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -26,6 +28,12 @@ import org.xml.sax.InputSource;
 public class PubMedClient {
 
     private static final Logger log = LoggerFactory.getLogger(PubMedClient.class);
+    private static final String PUBMED_SEARCH_URL = "https://pubmed.ncbi.nlm.nih.gov/";
+    private static final Pattern PMID_CHUNK_PATTERN = Pattern.compile(
+            "<pre\\s+class=\"search-results-chunk\">([\\s\\S]*?)</pre>",
+            Pattern.CASE_INSENSITIVE
+    );
+    private static final Pattern PMID_PATTERN = Pattern.compile("\\b\\d{6,}\\b");
 
     private final RestClient restClient;
     private final PubMedProperties properties;
@@ -45,21 +53,68 @@ public class PubMedClient {
 
     private List<String> fetchIds(String query) {
         try {
+            URI uri = UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
+                    .path("/esearch.fcgi")
+                    .queryParam("db", "pubmed")
+                    .queryParam("sort", "pub date")
+                    .queryParam("retmode", "xml")
+                    .queryParam("retmax", properties.getMaxResults())
+                    .queryParam("term", query)
+                    .build()
+                    .encode()
+                    .toUri();
+
             String xml = restClient.get()
-                    .uri(properties.getBaseUrl()
-                            + "/esearch.fcgi?db=pubmed&sort=pub%20date&retmode=xml&retmax="
-                            + properties.getMaxResults()
-                            + "&term="
-                            + URLEncoder.encode(query, StandardCharsets.UTF_8))
+                    .uri(uri)
                     .accept(MediaType.APPLICATION_XML)
                     .retrieve()
                     .body(String.class);
 
             Document document = parseXml(xml);
+            String error = firstText(document.getDocumentElement(), "ERROR");
+            if (StringUtils.hasText(error)) {
+                log.warn("ESearch do PubMed retornou erro: {}. Tentando fallback por pagina PMID.", error.trim());
+                return fetchIdsFromPubMedSearchPage(query);
+            }
+
             NodeList idNodes = document.getElementsByTagName("Id");
             List<String> ids = new ArrayList<>();
             for (int index = 0; index < idNodes.getLength(); index++) {
                 ids.add(idNodes.item(index).getTextContent().trim());
+            }
+            return ids;
+        } catch (Exception ex) {
+            log.warn("Falha ao consultar ESearch do PubMed. Tentando fallback por pagina PMID.", ex);
+            return fetchIdsFromPubMedSearchPage(query);
+        }
+    }
+
+    private List<String> fetchIdsFromPubMedSearchPage(String query) {
+        try {
+            URI uri = UriComponentsBuilder.fromHttpUrl(PUBMED_SEARCH_URL)
+                    .queryParam("term", query)
+                    .queryParam("sort", "date")
+                    .queryParam("format", "pmid")
+                    .build()
+                    .encode()
+                    .toUri();
+
+            String html = restClient.get()
+                    .uri(uri)
+                    .accept(MediaType.TEXT_HTML)
+                    .retrieve()
+                    .body(String.class);
+
+            if (!StringUtils.hasText(html)) {
+                return List.of();
+            }
+
+            Matcher chunkMatcher = PMID_CHUNK_PATTERN.matcher(html);
+            String pmidChunk = chunkMatcher.find() ? chunkMatcher.group(1) : html;
+            Matcher pmidMatcher = PMID_PATTERN.matcher(pmidChunk);
+            List<String> ids = new ArrayList<>();
+            while (pmidMatcher.find() && ids.size() < properties.getMaxResults()) {
+                ids.add(pmidMatcher.group());
             }
             return ids;
         } catch (Exception ex) {
@@ -69,10 +124,17 @@ public class PubMedClient {
 
     private List<PubMedArticleDto> fetchArticles(List<String> ids) {
         try {
+            URI uri = UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
+                    .path("/efetch.fcgi")
+                    .queryParam("db", "pubmed")
+                    .queryParam("retmode", "xml")
+                    .queryParam("id", String.join(",", ids))
+                    .build()
+                    .encode()
+                    .toUri();
+
             String xml = restClient.get()
-                    .uri(properties.getBaseUrl()
-                            + "/efetch.fcgi?db=pubmed&retmode=xml&id="
-                            + String.join(",", ids))
+                    .uri(uri)
                     .accept(MediaType.APPLICATION_XML)
                     .retrieve()
                     .body(String.class);
