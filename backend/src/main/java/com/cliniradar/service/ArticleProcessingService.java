@@ -13,6 +13,7 @@ import jakarta.transaction.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDate;
 import java.util.HexFormat;
 import java.util.Objects;
 import org.slf4j.Logger;
@@ -87,7 +88,7 @@ public class ArticleProcessingService {
         return new ArticleResponseDto(
                 article.getPubmedId(),
                 article.getTitle(),
-                article.getPublishedAt(),
+                displayablePublishedAt(article.getPublishedAt()),
                 article.getPublicationType(),
                 article.getJournal(),
                 article.getUrl(),
@@ -97,6 +98,10 @@ public class ArticleProcessingService {
                 summary.getPracticalImpact(),
                 summary.getWarningNote()
         );
+    }
+
+    private LocalDate displayablePublishedAt(LocalDate publishedAt) {
+        return publishedAt != null && publishedAt.isAfter(LocalDate.now()) ? null : publishedAt;
     }
 
     private Article createArticle(PubMedArticleDto dto, String contentHash) {

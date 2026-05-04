@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.cliniradar.config.PubMedProperties;
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -131,5 +132,56 @@ class PubMedClientTest {
         assertThat(requestedUris.get(1)).contains("format=pmid");
         assertThat(requestedUris.get(2)).contains("/efetch.fcgi");
         assertThat(requestedUris.get(2)).contains("42055497,42018894");
+    }
+
+    @Test
+    void usesElectronicArticleDateWhenJournalIssueDateIsInTheFuture() {
+        String esearchXml = """
+                <?xml version="1.0" encoding="UTF-8" ?>
+                <eSearchResult>
+                    <IdList><Id>41916183</Id></IdList>
+                </eSearchResult>
+                """;
+
+        String efetchXml = """
+                <?xml version="1.0" ?>
+                <PubmedArticleSet>
+                  <PubmedArticle>
+                    <MedlineCitation>
+                      <PMID>41916183</PMID>
+                      <Article>
+                        <Journal>
+                          <JournalIssue>
+                            <PubDate><Year>2099</Year><Month>Jul</Month></PubDate>
+                          </JournalIssue>
+                          <Title>Nutrition</Title>
+                        </Journal>
+                        <ArticleTitle>Effects of diet in patients with ulcerative colitis.</ArticleTitle>
+                        <Abstract><AbstractText>Study abstract.</AbstractText></Abstract>
+                        <ArticleDate DateType="Electronic">
+                          <Year>2026</Year><Month>02</Month><Day>23</Day>
+                        </ArticleDate>
+                        <PublicationTypeList>
+                          <PublicationType>Journal Article</PublicationType>
+                        </PublicationTypeList>
+                      </Article>
+                    </MedlineCitation>
+                    <PubmedData>
+                      <History>
+                        <PubMedPubDate PubStatus="pubmed">
+                          <Year>2026</Year><Month>04</Month><Day>01</Day>
+                        </PubMedPubDate>
+                      </History>
+                    </PubmedData>
+                  </PubmedArticle>
+                </PubmedArticleSet>
+                """;
+
+        when(responseSpec.body(String.class)).thenReturn(esearchXml, efetchXml);
+
+        var articles = pubMedClient.searchArticles("ulcerative colitis diet");
+
+        assertThat(articles).hasSize(1);
+        assertThat(articles.getFirst().publishedAt()).isEqualTo(LocalDate.of(2026, 2, 23));
     }
 }

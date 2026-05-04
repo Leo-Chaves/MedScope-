@@ -225,6 +225,25 @@ public class PubMedClient {
     }
 
     private LocalDate parseDate(Element article) {
+        LocalDate pubDate = parsePubDate(article);
+        if (pubDate == null || !pubDate.isAfter(LocalDate.now())) {
+            return pubDate;
+        }
+
+        LocalDate articleDate = parseFirstDate(article, "ArticleDate");
+        if (articleDate != null && !articleDate.isAfter(LocalDate.now())) {
+            return articleDate;
+        }
+
+        LocalDate historyDate = parsePubMedHistoryDate(article);
+        if (historyDate != null && !historyDate.isAfter(LocalDate.now())) {
+            return historyDate;
+        }
+
+        return null;
+    }
+
+    private LocalDate parsePubDate(Element article) {
         NodeList pubDateNodes = article.getElementsByTagName("PubDate");
         if (pubDateNodes.getLength() == 0) {
             return null;
@@ -246,6 +265,56 @@ public class PubMedClient {
         try {
             int parsedYear = Integer.parseInt(year);
             int parsedMonth = parseMonth(month);
+            int parsedDay = StringUtils.hasText(day) ? Integer.parseInt(day) : 1;
+            return LocalDate.of(parsedYear, parsedMonth, parsedDay);
+        } catch (RuntimeException ex) {
+            return LocalDate.of(Integer.parseInt(year), 1, 1);
+        }
+    }
+
+    private LocalDate parseFirstDate(Element parent, String tagName) {
+        NodeList dateNodes = parent.getElementsByTagName(tagName);
+        if (dateNodes.getLength() == 0) {
+            return null;
+        }
+
+        for (int index = 0; index < dateNodes.getLength(); index++) {
+            LocalDate parsedDate = parseDateElement((Element) dateNodes.item(index));
+            if (parsedDate != null) {
+                return parsedDate;
+            }
+        }
+        return null;
+    }
+
+    private LocalDate parsePubMedHistoryDate(Element article) {
+        NodeList dateNodes = article.getElementsByTagName("PubMedPubDate");
+        List<String> preferredStatuses = List.of("pubmed", "entrez", "medline");
+        for (String preferredStatus : preferredStatuses) {
+            for (int index = 0; index < dateNodes.getLength(); index++) {
+                Element dateElement = (Element) dateNodes.item(index);
+                String status = dateElement.getAttribute("PubStatus");
+                if (preferredStatus.equalsIgnoreCase(status)) {
+                    LocalDate parsedDate = parseDateElement(dateElement);
+                    if (parsedDate != null) {
+                        return parsedDate;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private LocalDate parseDateElement(Element dateElement) {
+        String year = firstText(dateElement, "Year");
+        if (!StringUtils.hasText(year)) {
+            return null;
+        }
+
+        try {
+            int parsedYear = Integer.parseInt(year);
+            int parsedMonth = parseMonth(firstText(dateElement, "Month"));
+            String day = firstText(dateElement, "Day");
             int parsedDay = StringUtils.hasText(day) ? Integer.parseInt(day) : 1;
             return LocalDate.of(parsedYear, parsedMonth, parsedDay);
         } catch (RuntimeException ex) {
