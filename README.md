@@ -186,6 +186,33 @@ http://localhost:5173
 
 1. O controller recebe `cid` e `context`
 2. O `CidMappingService` resolve a condicao e a query base em ingles
+3. Se a busca vier sem contexto clinico, o backend tenta responder pelo cache pre-processado do CID
+4. Se o cache do CID ainda estiver vazio, ele e preenchido sob demanda
+5. Se houver contexto clinico, o `PubMedClient` busca IDs recentes e depois carrega os detalhes dos artigos
+6. O backend trata artigos sem abstract com mensagem explicita de limitacao
+7. O `PromptBuilderService` monta um prompt estruturado e cauteloso
+8. O `OllamaClient` envia o prompt e espera JSON
+9. O `SearchService` persiste request, artigos e summaries e devolve a resposta pronta para a UI
+
+### Cache automatico por CID
+
+O backend possui um scheduler que atualiza, a cada 12 horas, os 2 artigos mais recentes de todos os CIDs cadastrados.
+Quando os artigos retornados pelo PubMed ja existem e o conteudo nao mudou, o resumo salvo e reaproveitado.
+Quando entra um artigo novo ou o titulo/abstract/metadados mudam, o resumo e refeito pela IA local.
+
+Configuracao:
+
+```properties
+summary-cache.refresh-interval-ms=43200000
+summary-cache.initial-delay-ms=30000
+```
+
+Com isso, a consulta comum por CID tende a ler apenas o cache, sem acionar a IA em toda requisicao.
+
+### Fluxo refinado com contexto
+
+1. O controller recebe `cid` e `context`
+2. O `CidMappingService` resolve a condicao e a query base em ingles
 3. O `PubMedClient` busca IDs recentes e depois carrega os detalhes dos artigos
 4. O backend trata artigos sem abstract com mensagem explicita de limitacao
 5. O `PromptBuilderService` monta um prompt estruturado e cauteloso

@@ -10,6 +10,10 @@ const props = defineProps({
   hasResults: {
     type: Boolean,
     default: false
+  },
+  loadingMore: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -27,7 +31,7 @@ const articleCountLabel = computed(() => {
           <span class="section-label">Condição mapeada</span>
           <h2>{{ result.condition }}</h2>
         </div>
-        <div class="results-pill">{{ articleCountLabel }}</div>
+        <div class="results-pill">{{ loadingMore ? 'Carregando mais' : articleCountLabel }}</div>
       </div>
 
       <div class="results-meta">

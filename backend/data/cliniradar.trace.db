@@ -1,3 +1,0 @@
-2026-04-23 16:48:04.406710-03:00 jdbc[4]: exception
-org.h2.jdbc.JdbcSQLTimeoutException: Timeout trying to lock table {0}; SQL statement:
-insert into article (abstract_text,journal,publication_type,published_at,pubmed_id,title,url,id) values (?,?,?,?,?,?,?,default) [50200-224]

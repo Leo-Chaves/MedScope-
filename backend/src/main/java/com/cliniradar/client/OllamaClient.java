@@ -72,7 +72,18 @@ public class OllamaClient {
             if (allowRetry && truncated) {
                 int retryTokens = Math.max(maxTokens * 2, MIN_RETRY_TOKENS);
                 log.warn("Resposta do Ollama truncada com {} tokens. Nova tentativa com {} tokens.", maxTokens, retryTokens);
-                return analyzeArticle(prompt, retryTokens, false);
+                try {
+                    return analyzeArticle(prompt, retryTokens, false);
+                } catch (ExternalServiceException retryEx) {
+                    int strictRetryTokens = Math.max(retryTokens * 2, MIN_RETRY_TOKENS);
+                    log.warn("Retry apos truncamento ainda retornou JSON invalido. Nova tentativa com prompt estrito e {} tokens.", strictRetryTokens);
+                    return analyzeArticle(strictJsonPrompt(prompt), strictRetryTokens, false);
+                }
+            }
+            if (allowRetry) {
+                int retryTokens = Math.max(maxTokens * 2, MIN_RETRY_TOKENS);
+                log.warn("Ollama retornou JSON invalido. Nova tentativa com prompt estrito e {} tokens.", retryTokens);
+                return analyzeArticle(strictJsonPrompt(prompt), retryTokens, false);
             }
             throw ex;
         }
@@ -143,6 +154,30 @@ public class OllamaClient {
         }
 
         throw new ExternalServiceException("O Ollama não retornou um JSON válido.");
+    }
+
+    private String strictJsonPrompt(String originalPrompt) {
+        return """
+                Retorne exclusivamente um objeto JSON valido.
+                Nao use markdown.
+                Nao escreva explicacoes.
+                Nao use texto antes ou depois do JSON.
+                Nao use quebras que invalidem strings.
+                Use exatamente estas chaves:
+                summaryPt, evidenceType, relevanceLevel, practicalImpact, warningNote.
+
+                Exemplo de formato:
+                {
+                  "summaryPt": "Resumo curto em portugues.",
+                  "evidenceType": "Tipo de evidencia.",
+                  "relevanceLevel": "BAIXO",
+                  "practicalImpact": "Impacto pratico cauteloso.",
+                  "warningNote": "Nota de cautela."
+                }
+
+                Tarefa original:
+                %s
+                """.formatted(originalPrompt);
     }
 
     private void normalizeMissingFields(OllamaAnalysisDto dto) {

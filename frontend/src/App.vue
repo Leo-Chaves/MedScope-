@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import AppHeader from './components/Header.vue'
 import SearchForm from './components/SearchForm.vue'
 import ResultsSection from './components/ResultsSection.vue'
@@ -11,8 +11,11 @@ const form = reactive({
 })
 
 const loading = ref(false)
+const loadingMore = ref(false)
 const errorMessage = ref('')
 const result = ref(null)
+let continueLoadingTimer = null
+let searchVersion = 0
 
 const helperItems = [
   { cid: 'F41.1', label: 'Ansiedade generalizada' },
@@ -24,14 +27,19 @@ const helperItems = [
 const hasResults = computed(() => (result.value?.articles?.length || 0) > 0)
 
 async function handleSearch() {
+  const currentVersion = ++searchVersion
+  clearContinueLoadingTimer()
   errorMessage.value = ''
   loading.value = true
+  loadingMore.value = false
 
   try {
     result.value = await searchEvidence({
       cid: form.cid,
-      context: form.context
+      context: form.context,
+      continueLoading: false
     })
+    scheduleContinueLoading(currentVersion)
   } catch (error) {
     result.value = null
     errorMessage.value =
@@ -45,6 +53,49 @@ async function handleSearch() {
 function applyHelper(cid) {
   form.cid = cid
 }
+
+function scheduleContinueLoading(version, attempt = 1) {
+  const hasContext = Boolean(form.context?.trim())
+  const total = result.value?.articles?.length || 0
+  if (hasContext || total >= 2 || attempt > 3) {
+    loadingMore.value = false
+    return
+  }
+
+  loadingMore.value = true
+  continueLoadingTimer = window.setTimeout(async () => {
+    try {
+      const nextResult = await searchEvidence({
+        cid: result.value?.cid || form.cid,
+        context: '',
+        continueLoading: true
+      })
+
+      if (version !== searchVersion) {
+        return
+      }
+
+      const nextTotal = nextResult?.articles?.length || 0
+      const currentTotal = result.value?.articles?.length || 0
+      if (nextTotal >= currentTotal) {
+        result.value = nextResult
+      }
+
+      scheduleContinueLoading(version, attempt + 1)
+    } catch {
+      loadingMore.value = false
+    }
+  }, 15000)
+}
+
+function clearContinueLoadingTimer() {
+  if (continueLoadingTimer) {
+    window.clearTimeout(continueLoadingTimer)
+    continueLoadingTimer = null
+  }
+}
+
+onBeforeUnmount(clearContinueLoadingTimer)
 </script>
 
 <template>
@@ -93,6 +144,7 @@ function applyHelper(cid) {
         v-if="result"
         :result="result"
         :has-results="hasResults"
+        :loading-more="loadingMore"
       />
     </main>
   </div>

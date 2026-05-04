@@ -35,6 +35,9 @@ public class Article {
     @Column(length = 500)
     private String url;
 
+    @Column(length = 64)
+    private String contentHash;
+
     public Article() {
     }
 
@@ -111,5 +114,13 @@ public class Article {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public String getContentHash() {
+        return contentHash;
+    }
+
+    public void setContentHash(String contentHash) {
+        this.contentHash = contentHash;
     }
 }

@@ -89,4 +89,71 @@ class OllamaClientTest {
         assertThat(((Map<?, ?>) requestBodies.get(0).get("options")).get("num_predict")).isEqualTo(180);
         assertThat(((Map<?, ?>) requestBodies.get(1).get("options")).get("num_predict")).isEqualTo(360);
     }
+
+    @Test
+    void retriesWithStrictPromptWhenOllamaReturnsNonJsonText() {
+        String invalidEnvelope = """
+                {
+                  "response": "Claro, aqui esta a analise solicitada.",
+                  "done_reason": "stop"
+                }
+                """;
+
+        String completedEnvelope = """
+                {
+                  "response": "{\\"summaryPt\\":\\"Resumo final\\",\\"evidenceType\\":\\"Journal Article\\",\\"relevanceLevel\\":\\"BAIXO\\",\\"practicalImpact\\":\\"Impacto pratico incerto.\\",\\"warningNote\\":\\"Use como apoio clinico.\\"}",
+                  "done_reason": "stop"
+                }
+                """;
+
+        when(responseSpec.body(String.class)).thenReturn(invalidEnvelope, completedEnvelope);
+
+        var result = ollamaClient.analyzeArticle("prompt de teste");
+
+        assertThat(result.getSummaryPt()).isEqualTo("Resumo final");
+
+        ArgumentCaptor<Map> bodyCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(requestBodySpec, times(2)).body(bodyCaptor.capture());
+
+        List<Map> requestBodies = bodyCaptor.getAllValues();
+        assertThat(requestBodies.get(1).get("prompt").toString())
+                .contains("Retorne exclusivamente um objeto JSON valido");
+    }
+
+    @Test
+    void retriesWithStrictPromptWhenRetryAfterTruncationIsStillInvalid() {
+        String truncatedEnvelope = """
+                {
+                  "response": "{\\"summaryPt\\":\\"Resumo truncado",
+                  "done_reason": "length"
+                }
+                """;
+
+        String invalidEnvelope = """
+                {
+                  "response": "Analise em texto sem objeto JSON.",
+                  "done_reason": "stop"
+                }
+                """;
+
+        String completedEnvelope = """
+                {
+                  "response": "{\\"summaryPt\\":\\"Resumo final\\",\\"evidenceType\\":\\"Journal Article\\",\\"relevanceLevel\\":\\"BAIXO\\",\\"practicalImpact\\":\\"Impacto pratico incerto.\\",\\"warningNote\\":\\"Use como apoio clinico.\\"}",
+                  "done_reason": "stop"
+                }
+                """;
+
+        when(responseSpec.body(String.class)).thenReturn(truncatedEnvelope, invalidEnvelope, completedEnvelope);
+
+        var result = ollamaClient.analyzeArticle("prompt de teste");
+
+        assertThat(result.getSummaryPt()).isEqualTo("Resumo final");
+
+        ArgumentCaptor<Map> bodyCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(requestBodySpec, times(3)).body(bodyCaptor.capture());
+
+        List<Map> requestBodies = bodyCaptor.getAllValues();
+        assertThat(requestBodies.get(2).get("prompt").toString())
+                .contains("Retorne exclusivamente um objeto JSON valido");
+    }
 }

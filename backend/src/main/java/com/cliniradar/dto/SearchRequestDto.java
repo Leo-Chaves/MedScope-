@@ -9,6 +9,8 @@ public class SearchRequestDto {
 
     private String context;
 
+    private boolean continueLoading;
+
     public String getCid() {
         return cid;
     }
@@ -23,5 +25,13 @@ public class SearchRequestDto {
 
     public void setContext(String context) {
         this.context = context;
+    }
+
+    public boolean isContinueLoading() {
+        return continueLoading;
+    }
+
+    public void setContinueLoading(boolean continueLoading) {
+        this.continueLoading = continueLoading;
     }
 }
