@@ -1,6 +1,6 @@
 <script setup>
 import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import BrandLockup from './BrandLockup.vue'
 import { loginProfessional, setAuthSession } from '../services/api'
 
@@ -8,7 +8,8 @@ const router = useRouter()
 
 const form = reactive({
   email: '',
-  password: ''
+  password: '',
+  remember: true
 })
 
 const loading = ref(false)
@@ -23,13 +24,10 @@ async function handleSubmit() {
       email: form.email,
       password: form.password
     })
-    setAuthSession(authResponse)
+    setAuthSession(authResponse, { remember: form.remember })
     router.push('/app')
-  } catch (error) {
-    errorMessage.value =
-      error?.response?.data?.message ||
-      error?.message ||
-      'Não foi possível fazer login. Verifique seu e-mail e senha.'
+  } catch {
+    errorMessage.value = 'Email ou senha invalidos'
   } finally {
     loading.value = false
   }
@@ -37,68 +35,87 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <main class="auth-layout">
-    <section class="login-shell">
-      <div class="login-hero">
-        <BrandLockup tone="light" />
-        <h1>Busque evidências clínicas com rastreabilidade científica.</h1>
-        <p class="hero-description">
-          Conecte-se com seu e-mail e sua senha para acessar a plataforma, pesquisar artigos e
-          organizar evidências do PubMed e da SciELO em um fluxo claro para apoio clínico.
-        </p>
+  <main class="auth-page">
+    <div class="auth-page__backdrop" aria-hidden="true"></div>
 
-        <div class="login-hero__panel">
-          <div class="login-hero__metric">
-            <strong>PubMed + SciELO</strong>
-            <span>Fontes integradas para consulta médica com contexto clínico opcional.</span>
-          </div>
-          <div class="login-hero__metric">
-            <strong>Leitura em português</strong>
-            <span>Resumos estruturados para triagem rápida e avaliação profissional.</span>
-          </div>
-        </div>
-      </div>
+    <div class="auth-page__content">
+      <RouterLink class="auth-back" to="/">
+        <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+          <path
+            d="M11.75 4.25L6 10l5.75 5.75M6.5 10h8"
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.8"
+          />
+        </svg>
+        <span>Voltar para Home</span>
+      </RouterLink>
 
-      <section class="login-card">
-        <div class="search-card__header search-card__header--login">
-          <h2>Login</h2>
-          <p>Use seu e-mail profissional e sua senha para acessar a plataforma.</p>
+      <section class="auth-card" aria-labelledby="login-title">
+        <div class="auth-card__brand">
+          <BrandLockup :show-symbol="false" />
         </div>
 
-        <form class="search-form" @submit.prevent="handleSubmit">
-          <label class="field">
-            <span>E-mail</span>
+        <div class="auth-card__header">
+          <h1 id="login-title">Acesse sua conta</h1>
+          <p>Entre para buscar evidencias clinicas com IA</p>
+        </div>
+
+        <form class="auth-form" @submit.prevent="handleSubmit">
+          <label class="auth-field">
+            <span>Email</span>
             <input
               v-model="form.email"
               type="email"
+              name="email"
               placeholder="voce@clinica.com"
               autocomplete="username"
+              autofocus
+              required
             />
           </label>
 
-          <label class="field">
+          <label class="auth-field">
             <span>Senha</span>
             <input
               v-model="form.password"
               type="password"
+              name="password"
               placeholder="Digite sua senha"
               autocomplete="current-password"
+              required
             />
           </label>
 
-          <p v-if="errorMessage" class="login-error">{{ errorMessage }}</p>
+          <div class="auth-row">
+            <label class="auth-checkbox">
+              <input v-model="form.remember" type="checkbox" name="remember" />
+              <span>Lembrar de mim</span>
+            </label>
 
-          <button class="primary-button primary-button--login" type="submit" :disabled="loading">
+            <a class="auth-inline-link" href="/">Esqueci minha senha</a>
+          </div>
+
+          <p v-if="errorMessage" class="auth-error" role="alert" aria-live="polite">
+            {{ errorMessage }}
+          </p>
+
+          <button class="auth-submit" type="submit" :disabled="loading">
             <span v-if="loading" class="button-spinner" aria-hidden="true"></span>
-            <span>{{ loading ? 'Fazendo login...' : 'Login' }}</span>
+            <span>{{ loading ? 'Entrando...' : 'Entrar' }}</span>
           </button>
         </form>
 
-        <p class="login-card__support">
-          Ambiente destinado a profissionais de saúde para consulta informacional e apoio à
-          decisão clínica.
-        </p>
+        <div class="auth-divider" aria-hidden="true">
+          <span></span>
+          <strong>ou</strong>
+          <span></span>
+        </div>
+
+        <RouterLink class="auth-secondary" to="/">Criar conta</RouterLink>
       </section>
-    </section>
+    </div>
   </main>
 </template>

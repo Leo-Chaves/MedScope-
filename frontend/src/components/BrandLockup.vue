@@ -4,6 +4,10 @@ defineProps({
     type: Boolean,
     default: false
   },
+  showSymbol: {
+    type: Boolean,
+    default: true
+  },
   tone: {
     type: String,
     default: 'default'
@@ -13,7 +17,7 @@ defineProps({
 
 <template>
   <div class="brand-lockup" :class="[`brand-lockup--${tone}`, { 'brand-lockup--compact': compact }]">
-    <div class="brand-lockup__symbol" aria-hidden="true">
+    <div v-if="showSymbol" class="brand-lockup__symbol" aria-hidden="true">
       <img src="/images/logo.png" alt="" class="brand-lockup__logo" />
     </div>
 
