@@ -24,7 +24,7 @@ async function handleSubmit() {
       password: form.password
     })
     setAuthSession(authResponse)
-    router.push('/')
+    router.push('/app')
   } catch (error) {
     errorMessage.value =
       error?.response?.data?.message ||

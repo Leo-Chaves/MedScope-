@@ -41,7 +41,7 @@ function handleLogout() {
 <template>
   <header class="topbar">
     <div class="topbar__content">
-      <a href="/" class="brand-link" aria-label="MedScope">
+      <a href="/app" class="brand-link" aria-label="MedScope">
         <BrandLockup compact />
       </a>
 
