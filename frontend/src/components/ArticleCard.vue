@@ -53,8 +53,15 @@ function relevanceClass(level) {
       <p>{{ article.warningNote }}</p>
     </section>
 
-    <a class="article-link" :href="article.url" target="_blank" rel="noreferrer">
-      Abrir artigo em {{ sourceLabel(article.source) }}
-    </a>
+    <div class="article-card__footer">
+      <a class="article-link" :href="article.url" target="_blank" rel="noreferrer">
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="article-link__icon">
+          <path d="M7 17L17 7" />
+          <path d="M9 7h8v8" />
+          <path d="M14 17H7V10" />
+        </svg>
+        <span>Abrir artigo original</span>
+      </a>
+    </div>
   </article>
 </template>
