@@ -6,10 +6,15 @@ import com.cliniradar.dto.SearchResponseDto;
 import com.cliniradar.dto.SearchStreamEventDto;
 import com.cliniradar.entity.CidMapping;
 import com.cliniradar.entity.SearchRequest;
+import com.cliniradar.entity.User;
 import com.cliniradar.repository.SearchRequestRepository;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -24,17 +29,20 @@ public class SearchService {
     private final ArticleProcessingService articleProcessingService;
     private final CidArticleCacheService cidArticleCacheService;
     private final ScientificArticleSearchService scientificArticleSearchService;
+    private final UserService userService;
 
     public SearchService(CidMappingService cidMappingService,
                          SearchRequestRepository searchRequestRepository,
                          ArticleProcessingService articleProcessingService,
                          CidArticleCacheService cidArticleCacheService,
-                         ScientificArticleSearchService scientificArticleSearchService) {
+                         ScientificArticleSearchService scientificArticleSearchService,
+                         UserService userService) {
         this.cidMappingService = cidMappingService;
         this.searchRequestRepository = searchRequestRepository;
         this.articleProcessingService = articleProcessingService;
         this.cidArticleCacheService = cidArticleCacheService;
         this.scientificArticleSearchService = scientificArticleSearchService;
+        this.userService = userService;
     }
 
     @Transactional
@@ -43,7 +51,7 @@ public class SearchService {
         CidMapping mapping = cidMappingService.getByCode(normalizedCid);
         String sourceFilter = normalizeSourceFilter(requestDto.getSource());
 
-        searchRequestRepository.save(new SearchRequest(normalizedCid, requestDto.getContext()));
+        saveSearchRequest(normalizedCid, requestDto.getContext());
 
         if (!StringUtils.hasText(requestDto.getContext()) && SearchRequestDto.SOURCE_PUBMED.equals(sourceFilter)) {
             return cidArticleCacheService.getCachedOrRefresh(mapping, DISCLAIMER, requestDto.isContinueLoading());
@@ -73,7 +81,7 @@ public class SearchService {
         CidMapping mapping = cidMappingService.getByCode(normalizedCid);
         String sourceFilter = normalizeSourceFilter(requestDto.getSource());
 
-        searchRequestRepository.save(new SearchRequest(normalizedCid, requestDto.getContext()));
+        saveSearchRequest(normalizedCid, requestDto.getContext());
 
         if (!StringUtils.hasText(requestDto.getContext()) && SearchRequestDto.SOURCE_PUBMED.equals(sourceFilter)) {
             SearchResponseDto cachedResponse = cidArticleCacheService.getCachedOrRefresh(
@@ -131,6 +139,22 @@ public class SearchService {
             return SearchRequestDto.SOURCE_SCIELO;
         }
         return SearchRequestDto.SOURCE_BOTH;
+    }
+
+    private void saveSearchRequest(String cidCode, String context) {
+        SearchRequest searchRequest = new SearchRequest(cidCode, context);
+        resolveAuthenticatedUser().ifPresent(searchRequest::setUser);
+        searchRequestRepository.save(searchRequest);
+    }
+
+    private Optional<User> resolveAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
+            return Optional.empty();
+        }
+        return userService.findByEmail(authentication.getName());
     }
 
 }

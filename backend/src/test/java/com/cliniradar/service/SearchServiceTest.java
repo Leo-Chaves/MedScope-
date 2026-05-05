@@ -37,6 +37,9 @@ class SearchServiceTest {
     @Mock
     private CidArticleCacheService cidArticleCacheService;
 
+    @Mock
+    private UserService userService;
+
     private SearchService searchService;
 
     @BeforeEach
@@ -46,7 +49,8 @@ class SearchServiceTest {
                 searchRequestRepository,
                 articleProcessingService,
                 cidArticleCacheService,
-                scientificArticleSearchService
+                scientificArticleSearchService,
+                userService
         );
     }
 
