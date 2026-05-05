@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import com.cliniradar.dto.ArticleResponseDto;
 import com.cliniradar.dto.SearchRequestDto;
 import com.cliniradar.dto.ScientificArticleDto;
+import com.cliniradar.client.OllamaClient;
 import com.cliniradar.entity.Article;
 import com.cliniradar.entity.ArticleSummary;
 import com.cliniradar.entity.CidMapping;
@@ -40,6 +41,9 @@ class SearchServiceTest {
     @Mock
     private UserService userService;
 
+    @Mock
+    private OllamaClient ollamaClient;
+
     private SearchService searchService;
 
     @BeforeEach
@@ -50,7 +54,8 @@ class SearchServiceTest {
                 articleProcessingService,
                 cidArticleCacheService,
                 scientificArticleSearchService,
-                userService
+                userService,
+                ollamaClient
         );
     }
 

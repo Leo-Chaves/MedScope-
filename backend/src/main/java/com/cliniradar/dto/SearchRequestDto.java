@@ -1,5 +1,6 @@
 package com.cliniradar.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 
 public class SearchRequestDto {
@@ -8,8 +9,9 @@ public class SearchRequestDto {
     public static final String SOURCE_PUBMED = "PUBMED";
     public static final String SOURCE_SCIELO = "SCIELO";
 
-    @NotBlank(message = "O CID é obrigatório.")
-    private String cid;
+    @JsonAlias("cid")
+    @NotBlank(message = "A busca e obrigatoria.")
+    private String query;
 
     private String context;
 
@@ -17,12 +19,20 @@ public class SearchRequestDto {
 
     private boolean continueLoading;
 
+    public String getQuery() {
+        return query;
+    }
+
+    public void setQuery(String query) {
+        this.query = query;
+    }
+
     public String getCid() {
-        return cid;
+        return query;
     }
 
     public void setCid(String cid) {
-        this.cid = cid;
+        this.query = cid;
     }
 
     public String getContext() {
