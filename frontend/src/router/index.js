@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import LandingView from '../views/LandingView.vue'
 import HomeView from '../views/HomeView.vue'
 import LoginView from '../components/LoginView.vue'
 import { getAuthToken } from '../services/api'
@@ -9,6 +10,11 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
+      component: LandingView
+    },
+    {
+      path: '/app',
+      name: 'app',
       component: HomeView,
       meta: { requiresAuth: true }
     },
@@ -26,7 +32,7 @@ router.beforeEach((to) => {
     return { name: 'login' }
   }
   if (to.name === 'login' && hasToken) {
-    return { name: 'home' }
+    return { name: 'app' }
   }
   return true
 })

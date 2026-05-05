@@ -2,6 +2,7 @@ import axios from 'axios'
 
 export const TOKEN_KEY = 'medscope.token'
 export const PROFESSIONAL_KEY = 'medscope.professional'
+const authStorages = [window.localStorage, window.sessionStorage]
 
 function defaultApiBaseUrl() {
   if (window.location.hostname.endsWith('.loca.lt')) {
@@ -25,20 +26,37 @@ const api = axios.create({
 })
 
 export function getAuthToken() {
-  return window.localStorage.getItem(TOKEN_KEY)
+  return readAuthValue(TOKEN_KEY)
 }
 
-export function setAuthSession(authResponse) {
-  window.localStorage.setItem(TOKEN_KEY, authResponse.token)
-  window.localStorage.setItem(PROFESSIONAL_KEY, JSON.stringify({
+export function setAuthSession(authResponse, options = {}) {
+  const remember = options.remember !== false
+  const storage = remember ? window.localStorage : window.sessionStorage
+
+  clearAuthSession()
+  storage.setItem(TOKEN_KEY, authResponse.token)
+  storage.setItem(PROFESSIONAL_KEY, JSON.stringify({
     name: authResponse.name,
     crm: authResponse.crm
   }))
 }
 
 export function clearAuthSession() {
-  window.localStorage.removeItem(TOKEN_KEY)
-  window.localStorage.removeItem(PROFESSIONAL_KEY)
+  authStorages.forEach((storage) => {
+    storage.removeItem(TOKEN_KEY)
+    storage.removeItem(PROFESSIONAL_KEY)
+  })
+}
+
+function readAuthValue(key) {
+  for (const storage of authStorages) {
+    const value = storage.getItem(key)
+    if (value) {
+      return value
+    }
+  }
+
+  return null
 }
 
 api.interceptors.request.use((config) => {

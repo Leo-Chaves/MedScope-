@@ -1,0 +1,6 @@
+#FileLock
+#Tue May 05 15:59:53 BRT 2026
+hostName=172.17.37.70
+id=19df982d31687df2f56140e5f85e1fd028f192cbee1
+method=file
+server=172.17.37.70\:61140
