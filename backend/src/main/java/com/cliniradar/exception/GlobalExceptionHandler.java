@@ -2,6 +2,7 @@ package com.cliniradar.exception;
 
 import com.cliniradar.dto.ErrorResponseDto;
 import java.time.OffsetDateTime;
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -35,11 +36,13 @@ public class GlobalExceptionHandler {
     }
 
     private ResponseEntity<ErrorResponseDto> build(HttpStatus status, String message) {
-        return ResponseEntity.status(status).body(new ErrorResponseDto(
-                OffsetDateTime.now(),
-                status.value(),
-                status.getReasonPhrase(),
-                message
-        ));
+        return ResponseEntity.status(status)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new ErrorResponseDto(
+                        OffsetDateTime.now(),
+                        status.value(),
+                        status.getReasonPhrase(),
+                        message
+                ));
     }
 }
