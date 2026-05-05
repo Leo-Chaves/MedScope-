@@ -6,7 +6,7 @@ import ResultsSection from '../components/ResultsSection.vue'
 import { searchEvidence, searchEvidenceStream } from '../services/api'
 
 const form = reactive({
-  cid: 'K51.9',
+  query: 'K51.9',
   context: '',
   source: 'BOTH'
 })
@@ -42,7 +42,7 @@ async function handleSearch() {
   try {
     await searchEvidenceStream(
       {
-        cid: form.cid,
+        query: form.query,
         context: form.context,
         source: form.source,
         continueLoading: false
@@ -65,7 +65,7 @@ async function handleSearch() {
 
           if (!result.value) {
             result.value = {
-              cid: form.cid,
+              cid: form.query,
               condition: '',
               queryUsed: '',
               refreshedAt: null,
@@ -109,7 +109,7 @@ async function handleSearch() {
 }
 
 function applyHelper(cid) {
-  form.cid = cid
+  form.query = cid
 }
 
 function scheduleContinueLoading(version, attempt = 1) {
@@ -125,7 +125,7 @@ function scheduleContinueLoading(version, attempt = 1) {
   continueLoadingTimer = window.setTimeout(async () => {
     try {
       const nextResult = await searchEvidence({
-        cid: result.value?.cid || form.cid,
+        query: result.value?.cid || form.query,
         context: '',
         source: form.source,
         continueLoading: true
@@ -197,7 +197,7 @@ onBeforeUnmount(() => {
       </div>
 
       <SearchForm
-        v-model:cid="form.cid"
+        v-model:query="form.query"
         v-model:context="form.context"
         v-model:source="form.source"
         :loading="loading"
