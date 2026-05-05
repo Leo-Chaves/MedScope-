@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import AppHeader from '../components/Header.vue'
 import SearchForm from '../components/SearchForm.vue'
+import TopCids from '../components/TopCids.vue'
 import ResultsSection from '../components/ResultsSection.vue'
 import { searchEvidence, searchEvidenceStream } from '../services/api'
 
@@ -112,6 +113,11 @@ function applyHelper(cid) {
   form.query = cid
 }
 
+function handleTopCidSelect(cidCode) {
+  form.query = cidCode
+  handleSearch()
+}
+
 function scheduleContinueLoading(version, attempt = 1) {
   const hasContext = Boolean(form.context?.trim())
   const total = result.value?.articles?.length || 0
@@ -196,13 +202,16 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <SearchForm
-        v-model:query="form.query"
-        v-model:context="form.context"
-        v-model:source="form.source"
-        :loading="loading"
-        @submit="handleSearch"
-      />
+      <div class="search-column">
+        <TopCids @select="handleTopCidSelect" />
+        <SearchForm
+          v-model:query="form.query"
+          v-model:context="form.context"
+          v-model:source="form.source"
+          :loading="loading"
+          @submit="handleSearch"
+        />
+      </div>
     </section>
 
     <section v-if="errorMessage" class="message-card">

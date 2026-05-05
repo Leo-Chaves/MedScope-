@@ -67,6 +67,11 @@ export async function loginProfessional(payload) {
   return response.data
 }
 
+export async function getTopCids() {
+  const response = await api.get('/api/stats/top-cids')
+  return response.data
+}
+
 export async function searchEvidence(payload) {
   const response = await api.post('/api/search', payload)
   return response.data

@@ -255,6 +255,73 @@ a {
   padding: 24px;
 }
 
+.search-column {
+  display: grid;
+  gap: 16px;
+}
+
+.top-cids {
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-soft);
+}
+
+.top-cids__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.top-cids__header strong {
+  font-size: 0.95rem;
+}
+
+.top-cids__status {
+  margin: 12px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+}
+
+.top-cids__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.top-cid-card {
+  display: grid;
+  gap: 4px;
+  min-height: 64px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-muted);
+  color: var(--text-main);
+  cursor: pointer;
+  text-align: left;
+}
+
+.top-cid-card:hover {
+  border-color: #bfd4f7;
+  background: #ffffff;
+}
+
+.top-cid-card span {
+  color: var(--primary-dark);
+  font-size: 0.85rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.top-cid-card strong {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
 .search-card__header h2,
 .results-summary h2,
 .message-card h2 {
@@ -586,6 +653,10 @@ a {
 
   .source-toggle {
     grid-template-columns: 1fr;
+  }
+
+  .top-cids__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
