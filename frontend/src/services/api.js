@@ -1,5 +1,8 @@
 import axios from 'axios'
 
+export const TOKEN_KEY = 'medscope.token'
+export const PROFESSIONAL_KEY = 'medscope.professional'
+
 function defaultApiBaseUrl() {
   if (window.location.hostname.endsWith('.loca.lt')) {
     return 'https://medscope-api.loca.lt'
@@ -12,14 +15,57 @@ function defaultApiBaseUrl() {
   return `http://${window.location.hostname}:8080`
 }
 
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || defaultApiBaseUrl()
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || defaultApiBaseUrl(),
+  baseURL: apiBaseUrl,
   headers: {
     'Content-Type': 'application/json'
   }
 })
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || defaultApiBaseUrl()
+export function getAuthToken() {
+  return window.localStorage.getItem(TOKEN_KEY)
+}
+
+export function setAuthSession(authResponse) {
+  window.localStorage.setItem(TOKEN_KEY, authResponse.token)
+  window.localStorage.setItem(PROFESSIONAL_KEY, JSON.stringify({
+    name: authResponse.name,
+    crm: authResponse.crm
+  }))
+}
+
+export function clearAuthSession() {
+  window.localStorage.removeItem(TOKEN_KEY)
+  window.localStorage.removeItem(PROFESSIONAL_KEY)
+}
+
+api.interceptors.request.use((config) => {
+  const token = getAuthToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401) {
+      clearAuthSession()
+      if (window.location.pathname !== '/login') {
+        window.location.assign('/login')
+      }
+    }
+    return Promise.reject(error)
+  }
+)
+
+export async function loginProfessional(payload) {
+  const response = await api.post('/api/auth/login', payload)
+  return response.data
+}
 
 export async function searchEvidence(payload) {
   const response = await api.post('/api/search', payload)
@@ -27,17 +73,26 @@ export async function searchEvidence(payload) {
 }
 
 export async function searchEvidenceStream(payload, handlers = {}) {
+  const token = getAuthToken()
   const response = await fetch(`${apiBaseUrl}/api/search/stream`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
     },
     body: JSON.stringify(payload),
     signal: handlers.signal
   })
 
   if (!response.ok) {
-    let errorMessage = 'Não foi possível iniciar a busca.'
+    if (response.status === 401) {
+      clearAuthSession()
+      if (window.location.pathname !== '/login') {
+        window.location.assign('/login')
+      }
+    }
+
+    let errorMessage = 'Nao foi possivel iniciar a busca.'
     try {
       const errorBody = await response.json()
       errorMessage = errorBody?.message || errorMessage
@@ -67,29 +122,23 @@ export async function searchEvidenceStream(payload, handlers = {}) {
         continue
       }
 
-      const event = JSON.parse(trimmed)
-      if (event.type === 'meta') {
-        handlers.onMeta?.(event.payload)
-      } else if (event.type === 'article') {
-        handlers.onArticle?.(event.payload)
-      } else if (event.type === 'complete') {
-        handlers.onComplete?.()
-      } else if (event.type === 'error') {
-        throw new Error(event.message || 'Falha durante a busca.')
-      }
+      dispatchStreamEvent(JSON.parse(trimmed), handlers)
     }
   }
 
   if (buffer.trim()) {
-    const event = JSON.parse(buffer.trim())
-    if (event.type === 'meta') {
-      handlers.onMeta?.(event.payload)
-    } else if (event.type === 'article') {
-      handlers.onArticle?.(event.payload)
-    } else if (event.type === 'complete') {
-      handlers.onComplete?.()
-    } else if (event.type === 'error') {
-      throw new Error(event.message || 'Falha durante a busca.')
-    }
+    dispatchStreamEvent(JSON.parse(buffer.trim()), handlers)
+  }
+}
+
+function dispatchStreamEvent(event, handlers) {
+  if (event.type === 'meta') {
+    handlers.onMeta?.(event.payload)
+  } else if (event.type === 'article') {
+    handlers.onArticle?.(event.payload)
+  } else if (event.type === 'complete') {
+    handlers.onComplete?.()
+  } else if (event.type === 'error') {
+    throw new Error(event.message || 'Falha durante a busca.')
   }
 }

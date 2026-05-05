@@ -1,64 +1,87 @@
 <script setup>
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { loginProfessional, setAuthSession } from '../services/api'
 
-defineProps({
-  errorMessage: {
-    type: String,
-    default: ''
-  }
-})
-
-const emit = defineEmits(['submit'])
+const router = useRouter()
 
 const form = reactive({
-  crm: '',
+  email: '',
   password: ''
 })
 
-function handleSubmit() {
-  emit('submit', { ...form })
+const loading = ref(false)
+const errorMessage = ref('')
+
+async function handleSubmit() {
+  errorMessage.value = ''
+  loading.value = true
+
+  try {
+    const authResponse = await loginProfessional({
+      email: form.email,
+      password: form.password
+    })
+    setAuthSession(authResponse)
+    router.push('/')
+  } catch (error) {
+    errorMessage.value =
+      error?.response?.data?.message ||
+      error?.message ||
+      'Nao foi possivel entrar. Verifique seu e-mail e senha.'
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
 <template>
-  <section class="login-shell">
-    <div class="login-hero">
-      <span class="hero-kicker">Acesso profissional</span>
-      <h1>Busque evidências clínicas com rastreabilidade científica.</h1>
-      <p class="hero-description">
-        Conecte-se com CRM e senha para acessar sua área, pesquisar artigos e organizar
-        evidências do PubMed e da SciELO em um fluxo simples para apoio clínico.
-      </p>
-    </div>
-
-    <section class="login-card">
-      <div class="search-card__header">
-        <h2>Entrar</h2>
-        <p>Use seu CRM profissional e sua senha para acessar a plataforma.</p>
+  <main class="auth-layout">
+    <section class="login-shell">
+      <div class="login-hero">
+        <span class="hero-kicker">Acesso profissional</span>
+        <h1>Busque evidencias clinicas com rastreabilidade cientifica.</h1>
+        <p class="hero-description">
+          Conecte-se com e-mail e senha para acessar sua area, pesquisar artigos e organizar
+          evidencias do PubMed e da SciELO em um fluxo simples para apoio clinico.
+        </p>
       </div>
 
-      <form class="search-form" @submit.prevent="handleSubmit">
-        <label class="field">
-          <span>CRM</span>
-          <input v-model="form.crm" type="text" placeholder="Ex.: 123456-PE" autocomplete="username" />
-        </label>
+      <section class="login-card">
+        <div class="search-card__header">
+          <h2>Entrar</h2>
+          <p>Use seu e-mail profissional e sua senha para acessar a plataforma.</p>
+        </div>
 
-        <label class="field">
-          <span>Senha</span>
-          <input
-            v-model="form.password"
-            type="password"
-            placeholder="Digite sua senha"
-            autocomplete="current-password"
-          />
-        </label>
+        <form class="search-form" @submit.prevent="handleSubmit">
+          <label class="field">
+            <span>E-mail</span>
+            <input
+              v-model="form.email"
+              type="email"
+              placeholder="voce@clinica.com"
+              autocomplete="username"
+            />
+          </label>
 
-        <p v-if="errorMessage" class="login-error">{{ errorMessage }}</p>
+          <label class="field">
+            <span>Senha</span>
+            <input
+              v-model="form.password"
+              type="password"
+              placeholder="Digite sua senha"
+              autocomplete="current-password"
+            />
+          </label>
 
-        <button class="primary-button" type="submit">
-          Entrar
-        </button>
-      </form>
+          <p v-if="errorMessage" class="login-error">{{ errorMessage }}</p>
+
+          <button class="primary-button" type="submit" :disabled="loading">
+            <span v-if="loading" class="button-spinner" aria-hidden="true"></span>
+            <span>{{ loading ? 'Entrando...' : 'Entrar' }}</span>
+          </button>
+        </form>
+      </section>
     </section>
-  </section>
+  </main>
 </template>
