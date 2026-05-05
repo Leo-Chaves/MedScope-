@@ -165,7 +165,8 @@ public class ScieloClient implements ScientificArticleSearchClient {
         String title = pickLocalizedValue(article.path("v12"));
         String abstractText = extractAbstract(article.path("v83"));
         String journal = firstUnderscore(article.path("v30"));
-        LocalDate publishedAt = parsePublicationDate(root.path("publication_date").asText(null));
+        String publicationDateRaw = root.path("publication_date").asText(null);
+        LocalDate publishedAt = parsePublicationDate(publicationDateRaw);
         String publicationType = humanize(root.path("document_type").asText("Artigo científico"));
         String url = extractUrl(root.path("fulltexts"), root.path("doi").asText(null), identifier.code());
 
@@ -180,6 +181,7 @@ public class ScieloClient implements ScientificArticleSearchClient {
                 abstractText,
                 StringUtils.hasText(journal) ? journal : "SciELO",
                 publishedAt,
+                formatPublicationDateDisplay(publicationDateRaw, publishedAt),
                 publicationType,
                 url
         );
@@ -305,6 +307,17 @@ public class ScieloClient implements ScientificArticleSearchClient {
             }
             return null;
         }
+    }
+
+    private String formatPublicationDateDisplay(String rawValue, LocalDate parsedDate) {
+        if (StringUtils.hasText(rawValue)) {
+            String normalized = rawValue.trim();
+            if (normalized.matches("\\d{4}") || normalized.matches("\\d{4}-\\d{2}")
+                    || normalized.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                return normalized;
+            }
+        }
+        return parsedDate != null ? parsedDate.toString() : null;
     }
 
     private String humanize(String value) {

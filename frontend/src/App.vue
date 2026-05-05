@@ -6,7 +6,7 @@ import ResultsSection from './components/ResultsSection.vue'
 import { searchEvidence } from './services/api'
 
 const form = reactive({
-  cid: 'F41.1',
+  cid: 'K51.9',
   context: '',
   source: 'BOTH'
 })
@@ -19,10 +19,11 @@ let continueLoadingTimer = null
 let searchVersion = 0
 
 const helperItems = [
-  { cid: 'F41.1', label: 'Ansiedade generalizada' },
-  { cid: 'M54.5', label: 'Dor lombar' },
+  { cid: 'K51.9', label: 'Retocolite ulcerativa' },
   { cid: 'E11', label: 'Diabetes tipo 2' },
-  { cid: 'K51.9', label: 'Retocolite ulcerativa' }
+  { cid: 'L40', label: 'Psoríase' },
+  { cid: 'M32', label: 'Lúpus' },
+  { cid: 'J45', label: 'Asma' }
 ]
 
 const hasResults = computed(() => (result.value?.articles?.length || 0) > 0)
@@ -31,6 +32,7 @@ async function handleSearch() {
   const currentVersion = ++searchVersion
   clearContinueLoadingTimer()
   errorMessage.value = ''
+  result.value = null
   loading.value = true
   loadingMore.value = false
 

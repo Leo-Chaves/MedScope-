@@ -70,6 +70,7 @@ class SearchServiceTest {
                 "Abstract text",
                 "Clinical Gastroenterology",
                 LocalDate.of(2026, 1, 15),
+                "2026-01-15",
                 "Review",
                 "https://pubmed.ncbi.nlm.nih.gov/12345678/"
         );
@@ -80,6 +81,7 @@ class SearchServiceTest {
                 pubMedArticle.abstractText(),
                 pubMedArticle.journal(),
                 pubMedArticle.publishedAt(),
+                pubMedArticle.publishedAtDisplay(),
                 pubMedArticle.publicationType(),
                 pubMedArticle.url()
         );
@@ -95,7 +97,7 @@ class SearchServiceTest {
                 pubMedArticle.source(),
                 pubMedArticle.sourceId(),
                 pubMedArticle.title(),
-                pubMedArticle.publishedAt(),
+                pubMedArticle.publishedAtDisplay(),
                 pubMedArticle.publicationType(),
                 pubMedArticle.journal(),
                 pubMedArticle.url(),

@@ -157,13 +157,14 @@ public class PubMedClient implements ScientificArticleSearchClient {
                     articles.add(new ScientificArticleDto(
                             "PUBMED",
                             pubmedId,
-                            StringUtils.hasText(title) ? title : "Sem título informado.",
+                            StringUtils.hasText(title) ? title : "Sem titulo informado.",
                             StringUtils.hasText(abstractText)
                                     ? abstractText
-                                    : "Resumo não disponível no PubMed para este artigo.",
-                            StringUtils.hasText(journal) ? journal : "Periódico não informado.",
+                                    : "Resumo nao disponivel no PubMed para este artigo.",
+                            StringUtils.hasText(journal) ? journal : "Periodico nao informado.",
                             publishedAt,
-                            StringUtils.hasText(publicationType) ? publicationType : "Não informado.",
+                            publishedAt != null ? publishedAt.toString() : null,
+                            StringUtils.hasText(publicationType) ? publicationType : "Nao informado.",
                             "https://pubmed.ncbi.nlm.nih.gov/" + pubmedId + "/"
                     ));
                 } catch (Exception articleEx) {

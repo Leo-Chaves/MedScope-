@@ -1,3 +1,0 @@
-2026-04-24 22:23:24.641329-03:00 jdbc[13]: exception
-org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "[*]SEARCH_REQUEST SELECT * FROM ARTICLE"; expected "SAVEPOINT, SCRIPT, SHUTDOWN"; SQL statement:
-SEARCH_REQUEST SELECT * FROM ARTICLE [42001-224]

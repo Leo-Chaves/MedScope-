@@ -30,6 +30,8 @@ public class Article {
 
     private LocalDate publishedAt;
 
+    private String publicationDateDisplay;
+
     private String publicationType;
 
     @Column(length = 500)
@@ -42,12 +44,13 @@ public class Article {
     }
 
     public Article(String pubmedId, String title, String abstractText, String journal,
-                   LocalDate publishedAt, String publicationType, String url) {
+                   LocalDate publishedAt, String publicationDateDisplay, String publicationType, String url) {
         this.pubmedId = pubmedId;
         this.title = title;
         this.abstractText = abstractText;
         this.journal = journal;
         this.publishedAt = publishedAt;
+        this.publicationDateDisplay = publicationDateDisplay;
         this.publicationType = publicationType;
         this.url = url;
     }
@@ -98,6 +101,14 @@ public class Article {
 
     public void setPublishedAt(LocalDate publishedAt) {
         this.publishedAt = publishedAt;
+    }
+
+    public String getPublicationDateDisplay() {
+        return publicationDateDisplay;
+    }
+
+    public void setPublicationDateDisplay(String publicationDateDisplay) {
+        this.publicationDateDisplay = publicationDateDisplay;
     }
 
     public String getPublicationType() {

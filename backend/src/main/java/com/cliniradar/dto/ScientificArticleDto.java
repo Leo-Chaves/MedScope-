@@ -9,6 +9,7 @@ public record ScientificArticleDto(
         String abstractText,
         String journal,
         LocalDate publishedAt,
+        String publishedAtDisplay,
         String publicationType,
         String url
 ) {

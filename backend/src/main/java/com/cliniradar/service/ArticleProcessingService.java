@@ -90,7 +90,7 @@ public class ArticleProcessingService {
                 resolveSource(sourceKey),
                 resolveSourceId(sourceKey),
                 article.getTitle(),
-                displayablePublishedAt(article.getPublishedAt()),
+                displayablePublishedAt(article.getPublishedAt(), article.getPublicationDateDisplay()),
                 article.getPublicationType(),
                 article.getJournal(),
                 article.getUrl(),
@@ -102,8 +102,14 @@ public class ArticleProcessingService {
         );
     }
 
-    private LocalDate displayablePublishedAt(LocalDate publishedAt) {
-        return publishedAt != null && publishedAt.isAfter(LocalDate.now()) ? null : publishedAt;
+    private String displayablePublishedAt(LocalDate publishedAt, String publicationDateDisplay) {
+        if (publishedAt != null && publishedAt.isAfter(LocalDate.now())) {
+            return null;
+        }
+        if (StringUtils.hasText(publicationDateDisplay)) {
+            return publicationDateDisplay;
+        }
+        return publishedAt != null ? publishedAt.toString() : null;
     }
 
     private Article createArticle(ScientificArticleDto dto, String contentHash) {
@@ -113,6 +119,7 @@ public class ArticleProcessingService {
                 dto.abstractText(),
                 dto.journal(),
                 dto.publishedAt(),
+                dto.publishedAtDisplay(),
                 dto.publicationType(),
                 dto.url()
         );
@@ -130,6 +137,7 @@ public class ArticleProcessingService {
         article.setAbstractText(dto.abstractText());
         article.setJournal(dto.journal());
         article.setPublishedAt(dto.publishedAt());
+        article.setPublicationDateDisplay(dto.publishedAtDisplay());
         article.setPublicationType(dto.publicationType());
         article.setUrl(dto.url());
         article.setContentHash(newHash);
@@ -145,6 +153,7 @@ public class ArticleProcessingService {
                 || !Objects.equals(article.getAbstractText(), dto.abstractText())
                 || !Objects.equals(article.getJournal(), dto.journal())
                 || !Objects.equals(article.getPublishedAt(), dto.publishedAt())
+                || !Objects.equals(article.getPublicationDateDisplay(), dto.publishedAtDisplay())
                 || !Objects.equals(article.getPublicationType(), dto.publicationType())
                 || !Objects.equals(article.getUrl(), dto.url());
     }
@@ -208,6 +217,7 @@ public class ArticleProcessingService {
                 safe(dto.abstractText()),
                 safe(dto.journal()),
                 safe(dto.publishedAt()),
+                safe(dto.publishedAtDisplay()),
                 safe(dto.publicationType()),
                 safe(dto.url())
         );
