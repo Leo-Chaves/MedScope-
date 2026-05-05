@@ -12,11 +12,11 @@ public class PromptBuilderService {
     public String buildArticleAnalysisPrompt(ScientificArticleDto article) {
         String abstractText = StringUtils.hasText(article.abstractText())
                 ? article.abstractText()
-                : "Resumo não disponível.";
+                : "Resumo nao disponivel.";
         String compactAbstract = abbreviate(abstractText, MAX_ABSTRACT_CHARS);
 
         return """
-                Analise o artigo abaixo e retorne somente um JSON válido em português do Brasil.
+                Analise o artigo abaixo e retorne somente um JSON valido em portugues do Brasil.
 
                 Formato:
                 {
@@ -28,19 +28,20 @@ public class PromptBuilderService {
                 }
 
                 Regras:
-                - Não recomende tratamento.
-                - Não invente dados.
+                - Nao recomende tratamento.
+                - Nao invente dados.
                 - Se o estudo for inconclusivo, diga isso.
                 - Seja breve e objetivo.
-                - summaryPt deve ter, no máximo, 5 linhas curtas e linguagem simples.
+                - summaryPt deve ter, no maximo, 5 linhas curtas e linguagem simples.
                 - Em relevanceLevel, use somente ALTO, MEDIO ou BAIXO.
-                - Se não houver dados suficientes, explicite a limitação.
-                - Não escreva nada fora do JSON.
+                - Em evidenceType, traduza o tipo de evidencia para portugues do Brasil; por exemplo, "Randomized Controlled Trial" vira "Ensaio Clinico Randomizado".
+                - Se nao houver dados suficientes, explicite a limitacao.
+                - Nao escreva nada fora do JSON.
 
                 Artigo:
-                Título: %s
-                Tipo de publicação: %s
-                Periódico: %s
+                Titulo: %s
+                Tipo de publicacao: %s
+                Periodico: %s
                 Data: %s
                 Resumo: %s
                 """.formatted(
@@ -56,6 +57,6 @@ public class PromptBuilderService {
         if (!StringUtils.hasText(value) || value.length() <= maxChars) {
             return value;
         }
-        return value.substring(0, maxChars) + "... [resumo truncado para análise rápida]";
+        return value.substring(0, maxChars) + "... [resumo truncado para analise rapida]";
     }
 }
