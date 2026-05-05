@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import AppHeader from '../components/Header.vue'
+import BrandLockup from '../components/BrandLockup.vue'
 import SearchForm from '../components/SearchForm.vue'
 import TopCids from '../components/TopCids.vue'
 import ResultsSection from '../components/ResultsSection.vue'
@@ -23,8 +24,8 @@ let currentSearchController = null
 const helperItems = [
   { cid: 'K51.9', label: 'Retocolite ulcerativa' },
   { cid: 'E11', label: 'Diabetes tipo 2' },
-  { cid: 'L40', label: 'Psoriase' },
-  { cid: 'M32', label: 'Lupus' },
+  { cid: 'L40', label: 'Psoríase' },
+  { cid: 'M32', label: 'Lúpus' },
   { cid: 'J45', label: 'Asma' }
 ]
 
@@ -102,7 +103,7 @@ async function handleSearch() {
     errorMessage.value =
       error?.message ||
       error?.response?.data?.message ||
-      'Nao foi possivel concluir a busca. Verifique a disponibilidade do backend, do PubMed, da SciELO e do Ollama.'
+      'Não foi possível concluir a busca. Verifique a disponibilidade do backend, do PubMed, da SciELO e do Ollama.'
   } finally {
     currentSearchController = null
     loading.value = false
@@ -180,12 +181,12 @@ onBeforeUnmount(() => {
   <main class="app-main">
     <section class="hero-section">
       <div class="hero-copy">
-        <span class="hero-kicker">Portal clinico informacional</span>
-        <h1>Evidencias clinicas atualizadas a partir de condicoes padronizadas</h1>
+        <span class="hero-kicker">Portal clínico informacional</span>
+        <h1>Evidências clínicas atualizadas a partir de condições padronizadas</h1>
         <p class="hero-description">
-          Pesquise por CID, escolha a base cientifica e acrescente contexto clinico opcional
-          para organizar artigos recentes, resumos em portugues e notas de cautela, com foco
-          em apoio informacional para avaliacao profissional.
+          Pesquise por CID, escolha a base científica e acrescente contexto clínico opcional
+          para organizar artigos recentes, resumos em português e notas de cautela, com foco
+          em apoio informacional para avaliação profissional.
         </p>
 
         <div class="helper-list">
@@ -227,4 +228,27 @@ onBeforeUnmount(() => {
       :loading-more="loadingMore"
     />
   </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__content">
+      <div class="site-footer__brand">
+        <BrandLockup compact />
+      </div>
+
+      <div class="site-footer__meta">
+        <div class="site-footer__item">
+          <span class="site-footer__label">Bases</span>
+          <strong>PubMed e SciELO</strong>
+        </div>
+        <div class="site-footer__item">
+          <span class="site-footer__label">Uso</span>
+          <strong>Apoio à pesquisa clínica</strong>
+        </div>
+        <div class="site-footer__item">
+          <span class="site-footer__label">Escopo</span>
+          <strong>Busca estruturada por CID</strong>
+        </div>
+      </div>
+    </div>
+  </footer>
 </template>

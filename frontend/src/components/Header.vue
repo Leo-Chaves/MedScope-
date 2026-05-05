@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import BrandLockup from './BrandLockup.vue'
 import { clearAuthSession, getAuthToken } from '../services/api'
 
 const router = useRouter()
@@ -40,10 +41,9 @@ function handleLogout() {
 <template>
   <header class="topbar">
     <div class="topbar__content">
-      <div>
-        <a href="/" class="brand">MedScope</a>
-        <p class="brand-subtitle">Plataforma de evidencias clinicas</p>
-      </div>
+      <a href="/" class="brand-link" aria-label="MedScope">
+        <BrandLockup compact />
+      </a>
 
       <div class="topbar__actions">
         <div class="topbar__identity">
