@@ -1,5 +1,5 @@
 <script setup>
-const cid = defineModel('cid')
+const query = defineModel('query')
 const context = defineModel('context')
 const source = defineModel('source')
 
@@ -23,18 +23,18 @@ const sourceOptions = [
   <section class="search-card">
     <div class="search-card__header">
       <h2>Nova busca</h2>
-      <p>Insira um CID válido, escolha a fonte e complemente com contexto clínico quando necessário.</p>
+      <p>Insira um CID ou condicao em portugues, escolha a fonte e complemente com contexto clinico quando necessario.</p>
     </div>
 
     <form class="search-form" @submit.prevent="emit('submit')">
       <label class="field">
-        <span>CID</span>
-        <input v-model="cid" type="text" placeholder="Ex.: F41.1" maxlength="10" />
+        <span>CID ou condicao em portugues</span>
+        <input v-model="query" type="text" placeholder="Ex: F41.1 ou ansiedade generalizada" />
       </label>
 
       <div class="field">
-        <span>Fonte científica</span>
-        <div class="source-toggle" role="radiogroup" aria-label="Fonte científica">
+        <span>Fonte cientifica</span>
+        <div class="source-toggle" role="radiogroup" aria-label="Fonte cientifica">
           <button
             v-for="option in sourceOptions"
             :key="option.value"
@@ -50,7 +50,7 @@ const sourceOptions = [
       </div>
 
       <label class="field">
-        <span>Contexto clínico opcional</span>
+        <span>Contexto clinico opcional</span>
         <textarea
           v-model="context"
           rows="5"
@@ -60,7 +60,7 @@ const sourceOptions = [
 
       <button class="primary-button" type="submit" :disabled="loading">
         <span v-if="loading" class="button-spinner" aria-hidden="true"></span>
-        <span>{{ loading ? 'Buscando evidências...' : 'Buscar evidências' }}</span>
+        <span>{{ loading ? 'Buscando evidencias...' : 'Buscar evidencias' }}</span>
       </button>
     </form>
   </section>

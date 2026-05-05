@@ -55,6 +55,30 @@ public class OllamaClient {
         }
     }
 
+    public String translateMedicalTerm(String term) {
+        String prompt = """
+                Traduza para ingles medico tecnico, retornando apenas o termo traduzido sem explicacoes: "%s"
+                """.formatted(term);
+        try {
+            String translated = requestText(prompt, 80)
+                    .replace("\"", "")
+                    .trim();
+            if (translated.isBlank()) {
+                throw new ExternalServiceException("O Ollama retornou uma traducao vazia.");
+            }
+            return translated.lines().findFirst().orElse(translated).trim();
+        } catch (ExternalServiceException ex) {
+            throw ex;
+        } catch (ResourceAccessException ex) {
+            throw translateTransportException(ex);
+        } catch (RestClientException ex) {
+            throw translateTransportException(ex);
+        } catch (Exception ex) {
+            log.error("Falha ao traduzir termo livre com Ollama.", ex);
+            throw new ExternalServiceException("Falha ao traduzir termo livre com o Ollama.", ex);
+        }
+    }
+
     private OllamaAnalysisDto analyzeArticle(String prompt, int maxTokens, boolean allowRetry) throws Exception {
         JsonNode envelope = requestAnalysis(prompt, maxTokens);
         String rawResponse = envelope.path("response").asText(null);
@@ -113,6 +137,35 @@ public class OllamaClient {
 
         String envelopeJson = extractJsonObject(responseBody.trim());
         return objectMapper.readTree(envelopeJson);
+    }
+
+    private String requestText(String prompt, int maxTokens) throws Exception {
+        String responseBody = restClient.post()
+                .uri(properties.getBaseUrl() + "/api/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of(
+                        "model", properties.getModel(),
+                        "prompt", prompt,
+                        "stream", false,
+                        "keep_alive", properties.getKeepAlive(),
+                        "options", Map.of(
+                                "num_predict", maxTokens,
+                                "temperature", 0.1
+                        )
+                ))
+                .retrieve()
+                .body(String.class);
+
+        if (responseBody == null || responseBody.isBlank()) {
+            throw new ExternalServiceException("O Ollama retornou uma resposta vazia.");
+        }
+
+        JsonNode envelope = objectMapper.readTree(extractJsonObject(responseBody.trim()));
+        String response = envelope.path("response").asText(null);
+        if (response == null || response.isBlank()) {
+            throw new ExternalServiceException("O Ollama nao retornou o campo response com conteudo.");
+        }
+        return response;
     }
 
     private boolean isTruncated(JsonNode envelope) {
