@@ -4,10 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import com.cliniradar.client.PubMedClient;
 import com.cliniradar.dto.ArticleResponseDto;
-import com.cliniradar.dto.PubMedArticleDto;
 import com.cliniradar.dto.SearchRequestDto;
+import com.cliniradar.dto.ScientificArticleDto;
 import com.cliniradar.entity.Article;
 import com.cliniradar.entity.ArticleSummary;
 import com.cliniradar.entity.CidMapping;
@@ -30,7 +29,7 @@ class SearchServiceTest {
     private SearchRequestRepository searchRequestRepository;
 
     @Mock
-    private PubMedClient pubMedClient;
+    private ScientificArticleSearchService scientificArticleSearchService;
 
     @Mock
     private ArticleProcessingService articleProcessingService;
@@ -45,9 +44,9 @@ class SearchServiceTest {
         searchService = new SearchService(
                 cidMappingService,
                 searchRequestRepository,
-                pubMedClient,
                 articleProcessingService,
-                cidArticleCacheService
+                cidArticleCacheService,
+                scientificArticleSearchService
         );
     }
 
@@ -64,7 +63,8 @@ class SearchServiceTest {
                 "Gastroenterology"
         );
 
-        PubMedArticleDto pubMedArticle = new PubMedArticleDto(
+        ScientificArticleDto pubMedArticle = new ScientificArticleDto(
+                "PUBMED",
                 "12345678",
                 "Ulcerative colitis treatment review",
                 "Abstract text",
@@ -75,7 +75,7 @@ class SearchServiceTest {
         );
 
         Article article = new Article(
-                pubMedArticle.pubmedId(),
+                pubMedArticle.source() + ":" + pubMedArticle.sourceId(),
                 pubMedArticle.title(),
                 pubMedArticle.abstractText(),
                 pubMedArticle.journal(),
@@ -92,7 +92,8 @@ class SearchServiceTest {
         fallbackSummary.setWarningNote("Resultado com fallback informacional. Motivo: Falha de comunicacao com o Ollama.");
 
         ArticleResponseDto responseArticle = new ArticleResponseDto(
-                pubMedArticle.pubmedId(),
+                pubMedArticle.source(),
+                pubMedArticle.sourceId(),
                 pubMedArticle.title(),
                 pubMedArticle.publishedAt(),
                 pubMedArticle.publicationType(),
@@ -108,7 +109,10 @@ class SearchServiceTest {
         when(cidMappingService.normalize("K51.9")).thenReturn("K51.9");
         when(cidMappingService.getByCode("K51.9")).thenReturn(mapping);
         when(searchRequestRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(pubMedClient.searchArticles("ulcerative colitis management inflammatory bowel disease blood"))
+        when(scientificArticleSearchService.searchAcrossSources(
+                "ulcerative colitis management inflammatory bowel disease blood",
+                SearchRequestDto.SOURCE_BOTH
+        ))
                 .thenReturn(List.of(pubMedArticle));
         when(articleProcessingService.saveAndAnalyzeArticle(pubMedArticle)).thenReturn(fallbackSummary);
         when(articleProcessingService.toResponse(fallbackSummary)).thenReturn(responseArticle);
@@ -116,7 +120,8 @@ class SearchServiceTest {
         var response = searchService.search(request);
 
         assertThat(response.articles()).hasSize(1);
-        assertThat(response.articles().getFirst().pubmedId()).isEqualTo("12345678");
+        assertThat(response.articles().getFirst().source()).isEqualTo("PUBMED");
+        assertThat(response.articles().getFirst().sourceId()).isEqualTo("12345678");
         assertThat(response.articles().getFirst().warningNote()).contains("fallback informacional");
     }
 }

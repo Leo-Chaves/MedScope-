@@ -1,6 +1,6 @@
 package com.cliniradar.service;
 
-import com.cliniradar.dto.PubMedArticleDto;
+import com.cliniradar.dto.ScientificArticleDto;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -9,7 +9,7 @@ public class PromptBuilderService {
 
     private static final int MAX_ABSTRACT_CHARS = 1600;
 
-    public String buildArticleAnalysisPrompt(PubMedArticleDto article) {
+    public String buildArticleAnalysisPrompt(ScientificArticleDto article) {
         String abstractText = StringUtils.hasText(article.abstractText())
                 ? article.abstractText()
                 : "Resumo não disponível.";

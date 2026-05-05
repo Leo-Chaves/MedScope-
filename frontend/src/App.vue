@@ -7,7 +7,8 @@ import { searchEvidence } from './services/api'
 
 const form = reactive({
   cid: 'F41.1',
-  context: ''
+  context: '',
+  source: 'BOTH'
 })
 
 const loading = ref(false)
@@ -37,6 +38,7 @@ async function handleSearch() {
     result.value = await searchEvidence({
       cid: form.cid,
       context: form.context,
+      source: form.source,
       continueLoading: false
     })
     scheduleContinueLoading(currentVersion)
@@ -44,7 +46,7 @@ async function handleSearch() {
     result.value = null
     errorMessage.value =
       error?.response?.data?.message ||
-      'Não foi possível concluir a busca. Verifique a disponibilidade do backend, do PubMed e do Ollama.'
+      'Não foi possível concluir a busca. Verifique a disponibilidade do backend, do PubMed, da SciELO e do Ollama.'
   } finally {
     loading.value = false
   }
@@ -57,7 +59,8 @@ function applyHelper(cid) {
 function scheduleContinueLoading(version, attempt = 1) {
   const hasContext = Boolean(form.context?.trim())
   const total = result.value?.articles?.length || 0
-  if (hasContext || total >= 2 || attempt > 3) {
+  const usesPubMedCacheOnly = form.source === 'PUBMED'
+  if (!usesPubMedCacheOnly || hasContext || total >= 2 || attempt > 3) {
     loadingMore.value = false
     return
   }
@@ -68,6 +71,7 @@ function scheduleContinueLoading(version, attempt = 1) {
       const nextResult = await searchEvidence({
         cid: result.value?.cid || form.cid,
         context: '',
+        source: form.source,
         continueLoading: true
       })
 
@@ -108,9 +112,9 @@ onBeforeUnmount(clearContinueLoadingTimer)
           <span class="hero-kicker">Portal clínico informacional</span>
           <h1>Evidências clínicas atualizadas a partir de condições padronizadas</h1>
           <p class="hero-description">
-            Pesquise por CID e acrescente contexto clínico opcional para organizar
-            artigos recentes, resumos em português e notas de cautela, com foco em
-            apoio informacional para avaliação profissional.
+            Pesquise por CID, escolha a base científica e acrescente contexto clínico opcional
+            para organizar artigos recentes, resumos em português e notas de cautela, com foco
+            em apoio informacional para avaliação profissional.
           </p>
 
           <div class="helper-list">
@@ -130,6 +134,7 @@ onBeforeUnmount(clearContinueLoadingTimer)
         <SearchForm
           v-model:cid="form.cid"
           v-model:context="form.context"
+          v-model:source="form.source"
           :loading="loading"
           @submit="handleSearch"
         />

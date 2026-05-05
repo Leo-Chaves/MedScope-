@@ -1,7 +1,7 @@
 package com.cliniradar.client;
 
 import com.cliniradar.config.PubMedProperties;
-import com.cliniradar.dto.PubMedArticleDto;
+import com.cliniradar.dto.ScientificArticleDto;
 import com.cliniradar.exception.ExternalServiceException;
 import java.io.StringReader;
 import java.net.URI;
@@ -25,7 +25,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 @Component
-public class PubMedClient {
+public class PubMedClient implements ScientificArticleSearchClient {
 
     private static final Logger log = LoggerFactory.getLogger(PubMedClient.class);
     private static final String PUBMED_SEARCH_URL = "https://pubmed.ncbi.nlm.nih.gov/";
@@ -43,7 +43,8 @@ public class PubMedClient {
         this.properties = properties;
     }
 
-    public List<PubMedArticleDto> searchArticles(String query) {
+    @Override
+    public List<ScientificArticleDto> searchArticles(String query) {
         List<String> ids = fetchIds(query);
         if (ids.isEmpty()) {
             return List.of();
@@ -122,7 +123,7 @@ public class PubMedClient {
         }
     }
 
-    private List<PubMedArticleDto> fetchArticles(List<String> ids) {
+    private List<ScientificArticleDto> fetchArticles(List<String> ids) {
         try {
             URI uri = UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
                     .path("/efetch.fcgi")
@@ -141,7 +142,7 @@ public class PubMedClient {
 
             Document document = parseXml(xml);
             NodeList articleNodes = document.getElementsByTagName("PubmedArticle");
-            List<PubMedArticleDto> articles = new ArrayList<>();
+            List<ScientificArticleDto> articles = new ArrayList<>();
 
             for (int index = 0; index < articleNodes.getLength(); index++) {
                 try {
@@ -153,7 +154,8 @@ public class PubMedClient {
                     String publicationType = collectPublicationTypes(article);
                     LocalDate publishedAt = parseDate(article);
 
-                    articles.add(new PubMedArticleDto(
+                    articles.add(new ScientificArticleDto(
+                            "PUBMED",
                             pubmedId,
                             StringUtils.hasText(title) ? title : "Sem título informado.",
                             StringUtils.hasText(abstractText)

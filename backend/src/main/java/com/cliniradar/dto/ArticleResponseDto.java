@@ -3,7 +3,8 @@ package com.cliniradar.dto;
 import java.time.LocalDate;
 
 public record ArticleResponseDto(
-        String pubmedId,
+        String source,
+        String sourceId,
         String title,
         LocalDate publishedAt,
         String publicationType,

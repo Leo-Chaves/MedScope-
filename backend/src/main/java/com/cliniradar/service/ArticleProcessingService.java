@@ -3,7 +3,7 @@ package com.cliniradar.service;
 import com.cliniradar.client.OllamaClient;
 import com.cliniradar.dto.ArticleResponseDto;
 import com.cliniradar.dto.OllamaAnalysisDto;
-import com.cliniradar.dto.PubMedArticleDto;
+import com.cliniradar.dto.ScientificArticleDto;
 import com.cliniradar.entity.Article;
 import com.cliniradar.entity.ArticleSummary;
 import com.cliniradar.exception.ExternalServiceException;
@@ -42,9 +42,9 @@ public class ArticleProcessingService {
     }
 
     @Transactional
-    public ArticleSummary saveAndAnalyzeArticle(PubMedArticleDto dto) {
+    public ArticleSummary saveAndAnalyzeArticle(ScientificArticleDto dto) {
         String newHash = contentHash(dto);
-        Article existingArticle = articleRepository.findByPubmedId(dto.pubmedId()).orElse(null);
+        Article existingArticle = articleRepository.findByPubmedId(articleKey(dto)).orElse(null);
         boolean articleChanged = existingArticle != null && hasArticleChanged(existingArticle, dto, newHash);
         Article article = existingArticle != null
                 ? updateArticle(existingArticle, dto, newHash)
@@ -59,7 +59,7 @@ public class ArticleProcessingService {
         try {
             analysis = ollamaClient.analyzeArticle(promptBuilderService.buildArticleAnalysisPrompt(dto));
         } catch (ExternalServiceException ex) {
-            log.warn("Fallback acionado para o artigo PubMed {}: {}", dto.pubmedId(), ex.getMessage());
+            log.warn("Fallback acionado para o artigo {} {}: {}", dto.source(), dto.sourceId(), ex.getMessage());
             analysis = buildFallbackAnalysis(dto, ex.getMessage());
         }
 
@@ -85,8 +85,10 @@ public class ArticleProcessingService {
 
     public ArticleResponseDto toResponse(ArticleSummary summary) {
         Article article = summary.getArticle();
+        String sourceKey = article.getPubmedId();
         return new ArticleResponseDto(
-                article.getPubmedId(),
+                resolveSource(sourceKey),
+                resolveSourceId(sourceKey),
                 article.getTitle(),
                 displayablePublishedAt(article.getPublishedAt()),
                 article.getPublicationType(),
@@ -104,9 +106,9 @@ public class ArticleProcessingService {
         return publishedAt != null && publishedAt.isAfter(LocalDate.now()) ? null : publishedAt;
     }
 
-    private Article createArticle(PubMedArticleDto dto, String contentHash) {
+    private Article createArticle(ScientificArticleDto dto, String contentHash) {
         Article article = new Article(
-                dto.pubmedId(),
+                articleKey(dto),
                 dto.title(),
                 dto.abstractText(),
                 dto.journal(),
@@ -123,7 +125,7 @@ public class ArticleProcessingService {
         return summary;
     }
 
-    private Article updateArticle(Article article, PubMedArticleDto dto, String newHash) {
+    private Article updateArticle(Article article, ScientificArticleDto dto, String newHash) {
         article.setTitle(dto.title());
         article.setAbstractText(dto.abstractText());
         article.setJournal(dto.journal());
@@ -134,7 +136,7 @@ public class ArticleProcessingService {
         return articleRepository.save(article);
     }
 
-    private boolean hasArticleChanged(Article article, PubMedArticleDto dto, String newHash) {
+    private boolean hasArticleChanged(Article article, ScientificArticleDto dto, String newHash) {
         if (StringUtils.hasText(article.getContentHash())) {
             return !Objects.equals(article.getContentHash(), newHash);
         }
@@ -161,7 +163,7 @@ public class ArticleProcessingService {
                 || !warningNote.toLowerCase().contains("fallback informacional");
     }
 
-    private OllamaAnalysisDto buildFallbackAnalysis(PubMedArticleDto dto, String reason) {
+    private OllamaAnalysisDto buildFallbackAnalysis(ScientificArticleDto dto, String reason) {
         OllamaAnalysisDto fallback = new OllamaAnalysisDto();
         fallback.setSummaryPt(
                 "Analise automatica indisponivel no momento. Consulte o titulo, o resumo e o artigo original para avaliacao profissional."
@@ -198,8 +200,10 @@ public class ArticleProcessingService {
         return StringUtils.hasText(value) ? value.trim() : fallback;
     }
 
-    private String contentHash(PubMedArticleDto dto) {
+    private String contentHash(ScientificArticleDto dto) {
         String payload = String.join("|",
+                safe(dto.source()),
+                safe(dto.sourceId()),
                 safe(dto.title()),
                 safe(dto.abstractText()),
                 safe(dto.journal()),
@@ -219,5 +223,25 @@ public class ArticleProcessingService {
 
     private String safe(Object value) {
         return value == null ? "" : value.toString().trim();
+    }
+
+    private String articleKey(ScientificArticleDto dto) {
+        return dto.source() + ":" + dto.sourceId();
+    }
+
+    private String resolveSource(String articleKey) {
+        int separator = articleKey.indexOf(':');
+        if (separator <= 0) {
+            return "PUBMED";
+        }
+        return articleKey.substring(0, separator);
+    }
+
+    private String resolveSourceId(String articleKey) {
+        int separator = articleKey.indexOf(':');
+        if (separator <= 0 || separator == articleKey.length() - 1) {
+            return articleKey;
+        }
+        return articleKey.substring(separator + 1);
     }
 }

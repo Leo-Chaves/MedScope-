@@ -1,6 +1,5 @@
 package com.cliniradar.service;
 
-import com.cliniradar.client.PubMedClient;
 import com.cliniradar.dto.ArticleResponseDto;
 import com.cliniradar.dto.SearchRequestDto;
 import com.cliniradar.dto.SearchResponseDto;
@@ -20,35 +19,39 @@ public class SearchService {
 
     private final CidMappingService cidMappingService;
     private final SearchRequestRepository searchRequestRepository;
-    private final PubMedClient pubMedClient;
     private final ArticleProcessingService articleProcessingService;
     private final CidArticleCacheService cidArticleCacheService;
+    private final ScientificArticleSearchService scientificArticleSearchService;
 
     public SearchService(CidMappingService cidMappingService,
                          SearchRequestRepository searchRequestRepository,
-                         PubMedClient pubMedClient,
                          ArticleProcessingService articleProcessingService,
-                         CidArticleCacheService cidArticleCacheService) {
+                         CidArticleCacheService cidArticleCacheService,
+                         ScientificArticleSearchService scientificArticleSearchService) {
         this.cidMappingService = cidMappingService;
         this.searchRequestRepository = searchRequestRepository;
-        this.pubMedClient = pubMedClient;
         this.articleProcessingService = articleProcessingService;
         this.cidArticleCacheService = cidArticleCacheService;
+        this.scientificArticleSearchService = scientificArticleSearchService;
     }
 
     @Transactional
     public SearchResponseDto search(SearchRequestDto requestDto) {
         String normalizedCid = cidMappingService.normalize(requestDto.getCid());
         CidMapping mapping = cidMappingService.getByCode(normalizedCid);
+        String sourceFilter = normalizeSourceFilter(requestDto.getSource());
 
         searchRequestRepository.save(new SearchRequest(normalizedCid, requestDto.getContext()));
 
-        if (!StringUtils.hasText(requestDto.getContext())) {
+        if (!StringUtils.hasText(requestDto.getContext()) && SearchRequestDto.SOURCE_PUBMED.equals(sourceFilter)) {
             return cidArticleCacheService.getCachedOrRefresh(mapping, DISCLAIMER, requestDto.isContinueLoading());
         }
 
         String queryUsed = buildQuery(mapping.getEnglishQueryBase(), requestDto.getContext());
-        List<ArticleResponseDto> articles = pubMedClient.searchArticles(queryUsed).stream()
+        List<ArticleResponseDto> articles = scientificArticleSearchService.searchAcrossSources(
+                        queryUsed,
+                        sourceFilter
+                ).stream()
                 .map(articleProcessingService::saveAndAnalyzeArticle)
                 .map(articleProcessingService::toResponse)
                 .toList();
@@ -68,6 +71,16 @@ public class SearchService {
             return base.trim();
         }
         return (base + " " + context.trim()).trim().replaceAll("\\s+", " ");
+    }
+
+    private String normalizeSourceFilter(String source) {
+        if (SearchRequestDto.SOURCE_PUBMED.equalsIgnoreCase(source)) {
+            return SearchRequestDto.SOURCE_PUBMED;
+        }
+        if (SearchRequestDto.SOURCE_SCIELO.equalsIgnoreCase(source)) {
+            return SearchRequestDto.SOURCE_SCIELO;
+        }
+        return SearchRequestDto.SOURCE_BOTH;
     }
 
 }

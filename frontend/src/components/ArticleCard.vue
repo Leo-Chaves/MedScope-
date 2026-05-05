@@ -6,6 +6,10 @@ const props = defineProps({
   }
 })
 
+function sourceLabel(source) {
+  return source === 'SCIELO' ? 'SciELO' : 'PubMed'
+}
+
 function relevanceClass(level) {
   return {
     ALTO: 'relevance-badge--high',
@@ -30,7 +34,8 @@ function relevanceClass(level) {
       <p><strong>Data:</strong> {{ article.publishedAt || 'Não informada' }}</p>
       <p><strong>Periódico:</strong> {{ article.journal }}</p>
       <p><strong>Tipo de evidência:</strong> {{ article.evidenceType }}</p>
-      <p><strong>PubMed ID:</strong> {{ article.pubmedId }}</p>
+      <p><strong>Fonte:</strong> {{ sourceLabel(article.source) }}</p>
+      <p><strong>{{ sourceLabel(article.source) }} ID:</strong> {{ article.sourceId }}</p>
     </div>
 
     <section class="article-block">
@@ -49,7 +54,7 @@ function relevanceClass(level) {
     </section>
 
     <a class="article-link" :href="article.url" target="_blank" rel="noreferrer">
-      Abrir artigo no PubMed
+      Abrir artigo em {{ sourceLabel(article.source) }}
     </a>
   </article>
 </template>

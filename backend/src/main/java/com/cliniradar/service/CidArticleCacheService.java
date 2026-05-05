@@ -2,7 +2,7 @@ package com.cliniradar.service;
 
 import com.cliniradar.client.PubMedClient;
 import com.cliniradar.dto.ArticleResponseDto;
-import com.cliniradar.dto.PubMedArticleDto;
+import com.cliniradar.dto.ScientificArticleDto;
 import com.cliniradar.dto.SearchResponseDto;
 import com.cliniradar.entity.ArticleSummary;
 import com.cliniradar.entity.CidArticleCache;
@@ -77,7 +77,7 @@ public class CidArticleCacheService {
     public void refreshCidCache(CidMapping mapping) {
         String cidCode = mapping.getCidCode();
         String queryUsed = mapping.getEnglishQueryBase().trim();
-        List<PubMedArticleDto> articles = pubMedClient.searchArticles(queryUsed);
+        List<ScientificArticleDto> articles = pubMedClient.searchArticles(queryUsed);
 
         if (articles.isEmpty()) {
             log.info("PubMed nao retornou artigos para o CID {}. Cache existente preservado.", cidCode);
@@ -117,7 +117,7 @@ public class CidArticleCacheService {
     private void refreshProgressively(CidMapping mapping, boolean waitForDisplayable) {
         String cidCode = mapping.getCidCode();
         String queryUsed = mapping.getEnglishQueryBase().trim();
-        List<PubMedArticleDto> articles = pubMedClient.searchArticles(queryUsed);
+        List<ScientificArticleDto> articles = pubMedClient.searchArticles(queryUsed);
 
         if (articles.isEmpty()) {
             log.info("PubMed nao retornou artigos para o CID {}. Cache existente preservado.", cidCode);

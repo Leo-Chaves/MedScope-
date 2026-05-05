@@ -10,7 +10,7 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 @Configuration
-@EnableConfigurationProperties({AppProperties.class, PubMedProperties.class})
+@EnableConfigurationProperties({AppProperties.class, PubMedProperties.class, ScieloProperties.class})
 public class HttpClientConfig {
 
     @Bean

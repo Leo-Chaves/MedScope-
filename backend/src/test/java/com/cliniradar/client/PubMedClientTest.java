@@ -119,7 +119,8 @@ class PubMedClientTest {
         var articles = pubMedClient.searchArticles("ulcerative colitis management inflammatory bowel disease blood");
 
         assertThat(articles).hasSize(2);
-        assertThat(articles).extracting("pubmedId").containsExactly("42055497", "42018894");
+        assertThat(articles).extracting("source").containsOnly("PUBMED");
+        assertThat(articles).extracting("sourceId").containsExactly("42055497", "42018894");
 
         ArgumentCaptor<URI> uriCaptor = ArgumentCaptor.forClass(URI.class);
         verify(requestHeadersUriSpec, times(3)).uri(uriCaptor.capture());
@@ -182,6 +183,8 @@ class PubMedClientTest {
         var articles = pubMedClient.searchArticles("ulcerative colitis diet");
 
         assertThat(articles).hasSize(1);
+        assertThat(articles.getFirst().source()).isEqualTo("PUBMED");
+        assertThat(articles.getFirst().sourceId()).isEqualTo("41916183");
         assertThat(articles.getFirst().publishedAt()).isEqualTo(LocalDate.of(2026, 2, 23));
     }
 }

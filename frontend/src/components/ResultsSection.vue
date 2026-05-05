@@ -21,6 +21,10 @@ const articleCountLabel = computed(() => {
   const total = props.result?.articles?.length || 0
   return total === 1 ? '1 artigo identificado' : `${total} artigos identificados`
 })
+
+function articleKey(article) {
+  return `${article.source || 'UNKNOWN'}-${article.sourceId || article.title}`
+}
 </script>
 
 <template>
@@ -51,7 +55,7 @@ const articleCountLabel = computed(() => {
     <section v-if="hasResults" class="article-grid">
       <ArticleCard
         v-for="article in result.articles"
-        :key="article.pubmedId"
+        :key="articleKey(article)"
         :article="article"
       />
     </section>
