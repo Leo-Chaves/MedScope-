@@ -3,11 +3,13 @@ package com.cliniradar.service;
 import com.cliniradar.dto.ArticleResponseDto;
 import com.cliniradar.dto.SearchRequestDto;
 import com.cliniradar.dto.SearchResponseDto;
+import com.cliniradar.dto.SearchStreamEventDto;
 import com.cliniradar.entity.CidMapping;
 import com.cliniradar.entity.SearchRequest;
 import com.cliniradar.repository.SearchRequestRepository;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.function.Consumer;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -64,6 +66,54 @@ public class SearchService {
                 DISCLAIMER,
                 articles
         );
+    }
+
+    public void streamSearch(SearchRequestDto requestDto, Consumer<SearchStreamEventDto> eventSink) {
+        String normalizedCid = cidMappingService.normalize(requestDto.getCid());
+        CidMapping mapping = cidMappingService.getByCode(normalizedCid);
+        String sourceFilter = normalizeSourceFilter(requestDto.getSource());
+
+        searchRequestRepository.save(new SearchRequest(normalizedCid, requestDto.getContext()));
+
+        if (!StringUtils.hasText(requestDto.getContext()) && SearchRequestDto.SOURCE_PUBMED.equals(sourceFilter)) {
+            SearchResponseDto cachedResponse = cidArticleCacheService.getCachedOrRefresh(
+                    mapping,
+                    DISCLAIMER,
+                    requestDto.isContinueLoading()
+            );
+            eventSink.accept(SearchStreamEventDto.meta(new SearchResponseDto(
+                    cachedResponse.cid(),
+                    cachedResponse.condition(),
+                    cachedResponse.queryUsed(),
+                    cachedResponse.refreshedAt(),
+                    cachedResponse.disclaimer(),
+                    List.of()
+            )));
+            for (ArticleResponseDto article : cachedResponse.articles()) {
+                eventSink.accept(SearchStreamEventDto.article(article));
+            }
+            eventSink.accept(SearchStreamEventDto.complete());
+            return;
+        }
+
+        String queryUsed = buildQuery(mapping.getEnglishQueryBase(), requestDto.getContext());
+        eventSink.accept(SearchStreamEventDto.meta(new SearchResponseDto(
+                normalizedCid,
+                mapping.getDisplayName(),
+                queryUsed,
+                null,
+                DISCLAIMER,
+                List.of()
+        )));
+
+        for (var article : scientificArticleSearchService.searchAcrossSources(queryUsed, sourceFilter)) {
+            ArticleResponseDto response = articleProcessingService.toResponse(
+                    articleProcessingService.saveAndAnalyzeArticle(article)
+            );
+            eventSink.accept(SearchStreamEventDto.article(response));
+        }
+
+        eventSink.accept(SearchStreamEventDto.complete());
     }
 
     private String buildQuery(String base, String context) {

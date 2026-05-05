@@ -7,6 +7,10 @@ const props = defineProps({
     type: Object,
     required: true
   },
+  loading: {
+    type: Boolean,
+    default: false
+  },
   hasResults: {
     type: Boolean,
     default: false
@@ -19,6 +23,9 @@ const props = defineProps({
 
 const articleCountLabel = computed(() => {
   const total = props.result?.articles?.length || 0
+  if (props.loading && total === 0) {
+    return 'Pesquisando artigos'
+  }
   return total === 1 ? '1 artigo identificado' : `${total} artigos identificados`
 })
 
@@ -58,6 +65,18 @@ function articleKey(article) {
         :key="articleKey(article)"
         :article="article"
       />
+    </section>
+
+    <section v-else-if="loading" class="message-card loading-card">
+      <div class="loading-card__content">
+        <span class="button-spinner loading-card__spinner" aria-hidden="true"></span>
+        <div>
+          <h2>Buscando evidências</h2>
+          <p>
+            Estamos consultando as bases científicas e organizando os primeiros artigos para exibição.
+          </p>
+        </div>
+      </div>
     </section>
 
     <section v-else class="message-card">
