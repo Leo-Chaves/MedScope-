@@ -1,40 +1,94 @@
 # MedScope
 
-MVP full stack para busca de evidencias medicas com base em CID, contexto clinico opcional, PubMed e analise local via Ollama.
+Plataforma healthtech para busca de evidências médicas a partir de CID-10, com resumos científicos em português gerados por IA com base em artigos recentes do PubMed.
+
+O MedScope foi desenhado para reduzir o tempo entre a dúvida clínica e o acesso à literatura relevante, sem substituir o julgamento médico.
+
+## Visão geral
 
 O sistema:
 
-- recebe um CID e um contexto opcional
-- mapeia o CID para uma condicao clinica e uma query em ingles
-- consulta artigos recentes no PubMed
-- envia titulo e abstract para o Ollama
-- devolve um resumo em portugues, classificacao de relevancia e notas de cautela
-- nao recomenda tratamento e nao substitui julgamento clinico
+- recebe um CID-10 e um contexto clínico opcional;
+- mapeia o CID para uma condição clínica e uma query em inglês;
+- consulta artigos recentes no PubMed;
+- envia título e abstract para análise local via Ollama;
+- devolve resumo em português, classificação de relevância, impacto prático e nota de cautela;
+- mantém um disclaimer explícito de uso informacional.
+
+## Destaques do produto
+
+- Busca orientada por CID-10.
+- Resumos científicos em português.
+- Interface SaaS médica com foco em confiança e clareza.
+- Classificação de evidência e relevância.
+- Arquitetura full stack com backend Java e frontend Vue.
+- IA local via Ollama.
+
+## Interface
+
+### Home
+
+![Home do MedScope](docs/readme-assets/home.png)
+
+### Login
+
+![Tela de login do MedScope](docs/readme-assets/login.png)
+
+### Pricing
+
+![Planos do MedScope](docs/readme-assets/pricing.png)
+
+## Exemplos de busca
+
+### Exemplo 1: `K51.9` -> Ulcerative colitis
+
+Busca e mapeamento da condição:
+
+![Busca por K51.9](docs/readme-assets/search-ulcerative-colitis.png)
+
+Resultado estruturado:
+
+![Resultado da busca por K51.9](docs/readme-assets/result-ulcerative-colitis.png)
+
+### Exemplo 2: `E11` -> Type 2 diabetes mellitus
+
+Busca e mapeamento da condição:
+
+![Busca por E11](docs/readme-assets/search-type2-diabetes.png)
+
+Resultado estruturado:
+
+![Resultado da busca por E11](docs/readme-assets/result-type2-diabetes.png)
 
 ## Stack
 
-- Backend: Java 21, Spring Boot, Spring Web, Spring Data JPA, Validation, H2
-- Frontend: Vue 3, Vite, Axios
-- Banco: H2
-- IA local: Ollama via HTTP
+- Backend: Java 21, Spring Boot, Spring Web, Spring Data JPA, Validation e H2.
+- Frontend: Vue 3, Vite e Axios.
+- Banco de dados: H2.
+- IA local: Ollama via HTTP.
 
-## Estrutura
+## Estrutura do projeto
 
 ```text
 .
 |-- backend
 |-- frontend
-|-- requests.http
+|-- data
+|-- docs
 `-- README.md
 ```
 
-## Seed inicial de CIDs
+## Seeds iniciais de CIDs
 
-- `F41.1` -> Generalized anxiety disorder
-- `M54.5` -> Low back pain
+Os CIDs atualmente semeados no projeto são:
+
 - `E11` -> Type 2 diabetes mellitus
-- `F32.9` -> Depressive episode
-- `G43.9` -> Migraine
+- `L40` -> Psoriasis
+- `M32` -> Systemic lupus erythematosus
+- `J45` -> Asthma
+- `K51.9` -> Ulcerative colitis
+
+Esses registros são carregados em [SeedDataConfig.java](backend/src/main/java/com/cliniradar/config/SeedDataConfig.java).
 
 ## Requisitos locais
 
@@ -43,11 +97,13 @@ O sistema:
 - Node.js 20+
 - Ollama instalado localmente
 
-## 1. Banco H2 para teste
+## Como rodar localmente
 
-O projeto agora usa H2 em arquivo local para facilitar testes sem PostgreSQL.
+### 1. Banco H2
 
-Configuracao atual:
+O projeto usa H2 em arquivo local para facilitar testes sem PostgreSQL.
+
+Configuração atual:
 
 ```properties
 spring.datasource.url=jdbc:h2:file:./data/cliniradar;AUTO_SERVER=TRUE
@@ -58,7 +114,7 @@ spring.h2.console.enabled=true
 spring.h2.console.path=/h2-console
 ```
 
-O banco sera criado automaticamente ao subir o backend.
+O banco é criado automaticamente ao subir o backend.
 
 Console H2:
 
@@ -72,7 +128,7 @@ JDBC URL no console:
 jdbc:h2:file:./data/cliniradar
 ```
 
-## 2. Subir Ollama
+### 2. Subir o Ollama
 
 Instale o Ollama e baixe o modelo configurado:
 
@@ -81,45 +137,51 @@ ollama pull mistral
 ollama run mistral
 ```
 
-Configuracao padrao do backend:
+Configuração padrão do backend:
 
 ```properties
 ollama.base-url=http://localhost:11434
 ollama.model=mistral
 ```
 
-Se quiser trocar o modelo, ajuste `application.properties`.
+Se quiser trocar o modelo, ajuste [application.properties](backend/src/main/resources/application.properties).
 
-## 3. Rodar o backend
+### 3. Rodar o backend
 
-Arquivo principal de configuracao:
+Arquivo principal de configuração:
 
 [application.properties](backend/src/main/resources/application.properties)
-
-Entre na pasta do backend e rode:
 
 ```bash
 cd backend
 mvn spring-boot:run
 ```
 
-API disponivel em:
+API disponível em:
 
 ```text
 http://localhost:8080
 ```
 
-Console H2:
+### 4. Rodar o frontend
 
-```text
-http://localhost:8080/h2-console
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-### Endpoint principal
+Aplicação disponível em:
+
+```text
+http://localhost:5173
+```
+
+## Endpoint principal
 
 `POST /api/search`
 
-Exemplo:
+Exemplo de payload:
 
 ```json
 {
@@ -135,7 +197,7 @@ Exemplo de resposta:
   "cid": "F41.1",
   "condition": "Generalized anxiety disorder",
   "queryUsed": "generalized anxiety disorder treatment resistant adults psychotherapy",
-  "disclaimer": "Conteudo informativo para avaliacao profissional. Nao substitui julgamento clinico.",
+  "disclaimer": "Conteúdo informativo para avaliação profissional. Não substitui julgamento clínico.",
   "articles": [
     {
       "pubmedId": "12345678",
@@ -144,102 +206,74 @@ Exemplo de resposta:
       "publicationType": "Randomized Controlled Trial",
       "journal": "Example Journal",
       "url": "https://pubmed.ncbi.nlm.nih.gov/12345678/",
-      "summaryPt": "Resumo informativo em portugues.",
+      "summaryPt": "Resumo informativo em português.",
       "relevanceLevel": "ALTO",
-      "evidenceType": "Ensaio clinico",
-      "practicalImpact": "Impacto pratico descrito de forma cautelosa.",
-      "warningNote": "Uso apenas informacional para avaliacao profissional."
+      "evidenceType": "Ensaio clínico",
+      "practicalImpact": "Impacto prático descrito de forma cautelosa.",
+      "warningNote": "Uso apenas informacional para avaliação profissional."
     }
   ]
 }
 ```
 
-## 4. Rodar o frontend
-
-Opcionalmente copie `frontend/.env.example` para `.env` e altere a URL da API se precisar.
-
-Entre na pasta do frontend e rode:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-App disponivel em:
-
-```text
-http://localhost:5173
-```
-
-## Observacoes de negocio
-
-- O sistema nao recomenda tratamento
-- O sistema nao afirma conduta medica
-- Os resumos devem ser lidos como apoio informacional
-- Quando a evidencia for fraca ou inconclusiva, isso deve aparecer no resumo e na nota de cautela
-- Toda resposta inclui disclaimer para avaliacao profissional
-
 ## Como o backend funciona
 
 ### Fluxo principal
 
-1. O controller recebe `cid` e `context`
-2. O `CidMappingService` resolve a condicao e a query base em ingles
-3. Se a busca vier sem contexto clinico, o backend tenta responder pelo cache pre-processado do CID
-4. Se o cache do CID ainda estiver vazio, ele e preenchido sob demanda
-5. Se houver contexto clinico, o `PubMedClient` busca IDs recentes e depois carrega os detalhes dos artigos
-6. O backend trata artigos sem abstract com mensagem explicita de limitacao
-7. O `PromptBuilderService` monta um prompt estruturado e cauteloso
-8. O `OllamaClient` envia o prompt e espera JSON
-9. O `SearchService` persiste request, artigos e summaries e devolve a resposta pronta para a UI
+1. O controller recebe `cid` e `context`.
+2. O `CidMappingService` resolve a condição e a query base em inglês.
+3. Se a busca vier sem contexto clínico, o backend tenta responder pelo cache pré-processado do CID.
+4. Se o cache do CID ainda estiver vazio, ele é preenchido sob demanda.
+5. Se houver contexto clínico, o `PubMedClient` busca IDs recentes e depois carrega os detalhes dos artigos.
+6. O backend trata artigos sem abstract com mensagem explícita de limitação.
+7. O `PromptBuilderService` monta um prompt estruturado e cauteloso.
+8. O `OllamaClient` envia o prompt e espera JSON.
+9. O `SearchService` persiste requests, artigos e summaries e devolve a resposta pronta para a UI.
 
-### Cache automatico por CID
+### Cache automático por CID
 
 O backend possui um scheduler que atualiza, a cada 12 horas, os 2 artigos mais recentes de todos os CIDs cadastrados.
-Quando os artigos retornados pelo PubMed ja existem e o conteudo nao mudou, o resumo salvo e reaproveitado.
-Quando entra um artigo novo ou o titulo/abstract/metadados mudam, o resumo e refeito pela IA local.
+Quando os artigos retornados pelo PubMed já existem e o conteúdo não mudou, o resumo salvo é reaproveitado.
+Quando entra um artigo novo ou quando título, abstract ou metadados mudam, o resumo é refeito pela IA local.
 
-Configuracao:
+Configuração:
 
 ```properties
 summary-cache.refresh-interval-ms=43200000
 summary-cache.initial-delay-ms=30000
 ```
 
-Com isso, a consulta comum por CID tende a ler apenas o cache, sem acionar a IA em toda requisicao.
+Com isso, a consulta comum por CID tende a ler apenas o cache, sem acionar a IA em toda requisição.
 
-### Fluxo refinado com contexto
+### Organização do backend
 
-1. O controller recebe `cid` e `context`
-2. O `CidMappingService` resolve a condicao e a query base em ingles
-3. O `PubMedClient` busca IDs recentes e depois carrega os detalhes dos artigos
-4. O backend trata artigos sem abstract com mensagem explicita de limitacao
-5. O `PromptBuilderService` monta um prompt estruturado e cauteloso
-6. O `OllamaClient` envia o prompt e espera JSON
-7. O `SearchService` persiste request, artigos e summaries e devolve a resposta pronta para a UI
+- `controller`: endpoints REST.
+- `service`: regras principais da aplicação.
+- `repository`: acesso JPA.
+- `dto`: payloads de entrada e saída.
+- `entity`: modelos persistidos.
+- `client`: integrações externas com PubMed e Ollama.
+- `exception`: tratamento global de erros.
 
-### Organizacao do backend
+## Observações de negócio
 
-- `controller`: endpoint REST
-- `service`: regras principais da aplicacao
-- `repository`: acesso JPA
-- `dto`: payloads de entrada e saida
-- `entity`: modelos persistidos
-- `client`: integracoes externas com PubMed e Ollama
-- `exception`: tratamento global de erros
+- O sistema não recomenda tratamento.
+- O sistema não afirma conduta médica.
+- Os resumos devem ser lidos como apoio informacional.
+- Quando a evidência for fraca ou inconclusiva, isso deve aparecer no resumo e na nota de cautela.
+- Toda resposta inclui disclaimer para avaliação profissional.
 
-## Pontos de atencao
+## Pontos de atenção
 
-- O PubMed pode retornar artigos sem abstract; nesses casos o backend informa a limitacao explicitamente
-- O Ollama precisa estar respondendo em `http://localhost:11434`
-- O modelo escolhido deve conseguir seguir instrucao e retornar JSON valido
-- `ddl-auto=update` foi usado para facilitar o MVP
+- O PubMed pode retornar artigos sem abstract; nesses casos, o backend informa a limitação explicitamente.
+- O Ollama precisa estar respondendo em `http://localhost:11434`.
+- O modelo escolhido deve conseguir seguir instruções e retornar JSON válido.
+- `ddl-auto=update` foi usado para facilitar o MVP.
 
 ## Melhorias futuras
 
-- cache de resultados por query
-- suporte a mais CIDs e importacao de tabela maior
-- autenticacao e historico por usuario
-- filtros por ano, tipo de estudo e especialidade
-- testes automatizados de integracao com mocks de PubMed e Ollama
+- Cache de resultados por query.
+- Suporte a mais CIDs e importação de uma tabela maior.
+- Autenticação e histórico por usuário.
+- Filtros por ano, tipo de estudo e especialidade.
+- Testes automatizados de integração com mocks de PubMed e Ollama.
